@@ -1,18 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { adminLoginAction } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Lock, Loader2 } from 'lucide-react'
-import { setAdminAuthenticated } from '@/lib/auth-memory'
 
 export default function AdminLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,9 +21,8 @@ export default function AdminLoginPage() {
       if (res.error) {
         setError(res.error)
       } else {
-        // Set the temporary memory flag so AdminGuard knows we legitimately logged in
-        setAdminAuthenticated(true)
-        router.push('/admin')
+        // Force a hard navigation to guarantee the browser sends the new secure cookie
+        window.location.href = '/admin'
       }
     } catch (err) {
       setError('An unexpected error occurred')

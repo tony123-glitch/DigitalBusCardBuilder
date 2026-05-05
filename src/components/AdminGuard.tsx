@@ -1,24 +1,34 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { logoutAction } from '@/app/admin/login/actions'
-import { isAdminAuthenticated } from '@/lib/auth-memory'
 
 export function AdminGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const [isAllowed, setIsAllowed] = useState<boolean>(false)
 
   useEffect(() => {
-    if (!isAdminAuthenticated) {
-      // Memory was wiped (e.g. by a refresh) or user navigated here directly without logging in
+    // Detect if this page load was caused by the user hitting the Refresh (F5) button
+    const isReload = 
+      (typeof performance !== 'undefined' && performance.navigation && performance.navigation.type === 1) ||
+      (typeof performance !== 'undefined' && performance.getEntriesByType('navigation').some(
+        (entry) => (entry as PerformanceNavigationTiming).type === 'reload'
+      ))
+
+    if (isReload) {
+      // Hard refresh detected. Wipe session and redirect
       logoutAction().then(() => {
         router.push('/admin/login')
       })
+    } else {
+      // Standard navigation, they passed the server layout cookie check, let them in
+      setIsAllowed(true)
     }
   }, [router])
 
-  // Don't render children if they aren't authenticated in memory
-  if (!isAdminAuthenticated) {
+  // Don't render children until we verify it's not a refresh
+  if (!isAllowed) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         {/* Simple skeleton loader to prevent flash before redirect */}
