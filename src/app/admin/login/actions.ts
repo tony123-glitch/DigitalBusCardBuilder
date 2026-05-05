@@ -1,8 +1,10 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
-export async function adminLoginAction(password: string) {
+export async function adminLoginAction(prevState: any, formData: FormData) {
+  const password = formData.get('password') as string
   const envPassword = process.env.ADMIN_PASSWORD
 
   if (!envPassword) {
@@ -16,12 +18,13 @@ export async function adminLoginAction(password: string) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 1800, // 30 minutes
+      // Removed maxAge to make it a standard session cookie (clears on browser close)
     })
-    return { success: true }
+  } else {
+    return { error: 'Incorrect password' }
   }
 
-  return { error: 'Incorrect password' }
+  redirect('/admin')
 }
 
 export async function logoutAction() {

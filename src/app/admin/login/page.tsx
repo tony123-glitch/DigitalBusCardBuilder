@@ -1,35 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState } from 'react'
 import { adminLoginAction } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Lock, Loader2 } from 'lucide-react'
 
 export default function AdminLoginPage() {
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
-
-    try {
-      const res = await adminLoginAction(password)
-      if (res.error) {
-        setError(res.error)
-      } else {
-        // Force a hard navigation to guarantee the browser sends the new secure cookie
-        window.location.href = '/admin'
-      }
-    } catch (err) {
-      setError('An unexpected error occurred')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const [state, formAction, isPending] = useActionState(adminLoginAction, null)
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -44,18 +22,17 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
+        <form action={formAction} className="space-y-6">
+          {state?.error && (
             <div className="p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl text-sm font-semibold text-center animate-in fade-in slide-in-from-top-1">
-              {error}
+              {state.error}
             </div>
           )}
           
           <div className="space-y-2">
             <Input 
               type="password" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
               placeholder="••••••••••••" 
               className="h-14 rounded-2xl text-center text-lg tracking-[0.3em] font-mono bg-slate-50/50 border-slate-200 focus:bg-white transition-colors"
               required
@@ -63,8 +40,8 @@ export default function AdminLoginPage() {
             />
           </div>
           
-          <Button type="submit" className="w-full h-14 rounded-2xl text-base font-bold shadow-md shadow-slate-900/10" disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Unlock Dashboard'}
+          <Button type="submit" className="w-full h-14 rounded-2xl text-base font-bold shadow-md shadow-slate-900/10" disabled={isPending}>
+            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Unlock Dashboard'}
           </Button>
         </form>
       </div>

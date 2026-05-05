@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { LogOut, CreditCard, LayoutDashboard, Settings, UserCircle } from 'lucide-react'
-import { AdminGuard } from '@/components/AdminGuard'
 import { logoutAction } from '@/app/admin/login/actions'
 
 export default async function AdminLayout({
@@ -18,8 +17,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <AdminGuard>
-      <div className="flex min-h-screen bg-slate-50/50">
+    <div className="flex min-h-screen bg-slate-50/50">
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 border-r border-slate-200 bg-white shadow-sm flex flex-col">
         <div className="flex h-16 items-center px-6 border-b border-slate-100">
@@ -77,7 +75,6 @@ export default async function AdminLayout({
           {children}
         </div>
       </main>
-      </div>
-    </AdminGuard>
+    </div>
   )
 }
