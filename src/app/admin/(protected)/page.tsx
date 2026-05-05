@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/server'
 import Link from 'next/link'
 import { Plus, Edit, ExternalLink, KeySquare, TrendingUp, Users, CreditCard as CreditCardIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,10 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 export const dynamic = 'force-dynamic'
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) return null
 
   const adminClient = createAdminClient()
 

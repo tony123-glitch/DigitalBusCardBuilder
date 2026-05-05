@@ -1,15 +1,14 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import bcrypt from 'bcryptjs'
 
 export async function updateCard(id: string, formData: FormData) {
-  const supabase = await createClient()
-
-  // Verify admin session
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('admin_session')
+  if (!session) {
     return { error: 'Unauthorized' }
   }
 
