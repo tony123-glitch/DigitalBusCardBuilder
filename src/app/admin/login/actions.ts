@@ -1,30 +1,30 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
+import { cookies } from 'next/headers'
 
-export async function login(formData: FormData) {
-  const supabase = await createClient()
+export async function adminLoginAction(password: string) {
+  const envPassword = process.env.ADMIN_PASSWORD
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-
-  if (!email || !password) {
-    return { error: 'Email and password are required' }
+  if (!envPassword) {
+    return { error: 'ADMIN_PASSWORD is not configured in .env.local' }
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
-
-  if (error) {
-    return { error: error.message }
+  if (password === envPassword) {
+    const cookieStore = await cookies()
+    cookieStore.set('admin_session', 'authenticated', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 1800, // 30 minutes
+    })
+    return { success: true }
   }
 
-  revalidatePath('/admin', 'layout')
-  redirect('/admin')
+  return { error: 'Incorrect password' }
+}
+
+export async function logoutAction() {
+  const cookieStore = await cookies()
+  cookieStore.delete('admin_session')
 }

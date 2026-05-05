@@ -1,25 +1,25 @@
-import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { LogOut, CreditCard, LayoutDashboard, Settings, UserCircle } from 'lucide-react'
+import { AdminGuard } from '@/components/AdminGuard'
+import { logoutAction } from '@/app/admin/login/actions'
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const cookieStore = await cookies()
+  const session = cookieStore.get('admin_session')
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!session) {
     redirect('/admin/login')
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50/50">
+    <AdminGuard>
+      <div className="flex min-h-screen bg-slate-50/50">
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 border-r border-slate-200 bg-white shadow-sm flex flex-col">
         <div className="flex h-16 items-center px-6 border-b border-slate-100">
@@ -54,11 +54,15 @@ export default async function AdminLayout({
               <UserCircle className="h-5 w-5 text-slate-500" />
             </div>
             <div className="flex flex-col overflow-hidden">
-              <span className="text-sm font-medium text-slate-900 truncate">Admin</span>
-              <span className="text-xs text-slate-500 truncate">{user.email}</span>
+              <span className="text-sm font-medium text-slate-900 truncate">System Admin</span>
+              <span className="text-xs text-slate-500 truncate">Authenticated</span>
             </div>
           </div>
-          <form action="/auth/signout" method="post">
+          <form action={async () => {
+            'use server'
+            await logoutAction()
+            redirect('/admin/login')
+          }}>
             <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
               <LogOut className="h-4 w-4" />
               Sign out
@@ -73,6 +77,7 @@ export default async function AdminLayout({
           {children}
         </div>
       </main>
-    </div>
+      </div>
+    </AdminGuard>
   )
 }
