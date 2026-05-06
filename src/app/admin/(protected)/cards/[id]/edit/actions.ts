@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import bcrypt from 'bcryptjs'
 
 export async function updateCard(id: string, formData: FormData) {
@@ -81,5 +82,5 @@ export async function updateCard(id: string, formData: FormData) {
 
   revalidatePath('/admin', 'layout')
   revalidatePath(`/card/${slug}`)
-  return { success: true }
+  redirect('/admin')
 }

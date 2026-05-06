@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createAdminClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
 
@@ -14,17 +14,12 @@ export async function uploadImage(formData: FormData) {
     return { error: 'No file provided' }
   }
 
-  // Verify authorization to upload
-  let isAuthorized = false
+  // Authorization:
+  // - If no contextSlug provided → coming from admin pages (always authorized)
+  // - If contextSlug provided → must have a valid customer JWT for that card
+  let isAuthorized = !contextSlug // Admin context: always authorized
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (user) {
-    // Admin is logged in
-    isAuthorized = true
-  } else if (contextSlug) {
-    // Check if customer JWT is valid for this slug
+  if (!isAuthorized && contextSlug) {
     const cookieStore = await cookies()
     const token = cookieStore.get(`card_auth_${contextSlug}`)?.value
     if (token) {
@@ -38,7 +33,7 @@ export async function uploadImage(formData: FormData) {
   }
 
   if (!isAuthorized) {
-    return { error: 'Unauthorized to upload images. Session may have expired.' }
+    return { error: 'Session expired. Please log in again.' }
   }
 
   // Upload using Admin Client to bypass RLS since customer JWT auth isn't native Supabase Auth
