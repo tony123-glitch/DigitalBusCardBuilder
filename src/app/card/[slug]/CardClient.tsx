@@ -55,6 +55,15 @@ const containerVariants = {
   show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.2 } }
 }
 
+function formatPhoneNumber(phoneNumberString: string) {
+  const cleaned = ('' + phoneNumberString).replace(/\D/g, '')
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/)
+  if (match) {
+    return '(' + match[1] + ') ' + match[2] + '-' + match[3]
+  }
+  return phoneNumberString
+}
+
 export default function CardClient({ card }: { card: any }) {
   const [mounted, setMounted] = useState(false)
   
@@ -68,7 +77,7 @@ export default function CardClient({ card }: { card: any }) {
   }
 
   const contactItems = [
-    card.phone_number && { href: `tel:${card.phone_number}`, icon: Phone, label: card.phone_number },
+    card.phone_number && { href: `tel:${card.phone_number}`, icon: Phone, label: formatPhoneNumber(card.phone_number) },
     card.email       && { href: `mailto:${card.email}`, icon: Mail, label: card.email },
     card.website     && { href: card.website.startsWith('http') ? card.website : `https://${card.website}`, icon: Globe, label: card.website.replace(/^https?:\/\//, ''), external: true },
     card.location    && { href: `https://maps.google.com/?q=${encodeURIComponent(card.location)}`, icon: MapPin, label: card.location, external: true },
@@ -234,7 +243,7 @@ export default function CardClient({ card }: { card: any }) {
           {/* Tagline & Footer */}
           {card.company_tagline && (
             <motion.div variants={itemVariants} className="pt-6 pb-2 text-center">
-              <p className="text-xs italic font-medium tracking-wide text-white/90">
+              <p className="text-sm italic font-medium tracking-wide text-white/90">
                 "{card.company_tagline}"
               </p>
             </motion.div>
@@ -256,14 +265,32 @@ export default function CardClient({ card }: { card: any }) {
           style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
         >
           <div className="max-w-[420px] mx-auto flex gap-3 pointer-events-auto">
-            <a
-              href={`/card/${card.slug}/edit/login`}
+            <button
+              onClick={() => {
+                let vCardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${card.owner_name}\nN:${card.owner_name};;;;\n`
+                if (card.company_name) vCardData += `ORG:${card.company_name}\n`
+                if (card.job_title) vCardData += `TITLE:${card.job_title}\n`
+                if (card.phone_number) vCardData += `TEL;TYPE=CELL:${card.phone_number}\n`
+                if (card.email) vCardData += `EMAIL;TYPE=WORK:${card.email}\n`
+                if (card.website) vCardData += `URL:${card.website}\n`
+                vCardData += `END:VCARD`
+
+                const blob = new Blob([vCardData], { type: "text/vcard" })
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement("a")
+                link.href = url
+                link.download = `${card.owner_name.replace(/\s+/g, '_')}_Contact.vcf`
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+                URL.revokeObjectURL(url)
+              }}
               className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
               style={{ backgroundColor: '#ffffff', color: '#000000' }}
             >
               <Download className="w-4 h-4" strokeWidth={2.5} />
               Save Contact
-            </a>
+            </button>
             <button
               className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all active:scale-[0.97] backdrop-blur-md"
               onClick={() => {
