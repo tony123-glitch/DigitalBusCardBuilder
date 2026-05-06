@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { uploadImage } from '@/app/actions/upload'
-import { Loader2, ImageIcon, Camera, FolderOpen, X, RefreshCw } from 'lucide-react'
+import { Loader2, ImageIcon, Camera, FolderOpen, X, RefreshCw, Check } from 'lucide-react'
+import Cropper from 'react-easy-crop'
+import getCroppedImg from '@/utils/cropImage'
 
 export interface ImageUploaderProps {
   name: string
@@ -27,7 +29,13 @@ export function ImageUploader({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Cropping State
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null)
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -35,37 +43,66 @@ export function ImageUploader({
       setError('Please select an image file.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be under 5MB.')
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image must be under 10MB.')
       return
     }
 
-    setIsUploading(true)
     setError('')
 
-    const formData = new FormData()
-    formData.append('file', file)
-    if (contextSlug) formData.append('contextSlug', contextSlug)
+    // Read the file as a Data URL for the cropper
+    const reader = new FileReader()
+    reader.addEventListener('load', () => {
+      setImageToCrop(reader.result?.toString() || null)
+    })
+    reader.readAsDataURL(file)
+
+    // Reset inputs
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    if (cameraInputRef.current) cameraInputRef.current.value = ''
+  }
+
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels)
+  }, [])
+
+  const handleConfirmCrop = async () => {
+    if (!imageToCrop || !croppedAreaPixels) return
 
     try {
+      setIsUploading(true)
+      const croppedFile = await getCroppedImg(imageToCrop, croppedAreaPixels)
+      setImageToCrop(null) // Close cropper modal immediately
+      
+      if (!croppedFile) {
+        throw new Error("Failed to crop image")
+      }
+
+      const formData = new FormData()
+      formData.append('file', croppedFile)
+      if (contextSlug) formData.append('contextSlug', contextSlug)
+
       const res = await uploadImage(formData)
       if (res.error) {
         setError(res.error)
       } else if (res.url) {
         setUrl(res.url)
       }
-    } catch {
+    } catch (e) {
+      console.error(e)
       setError('Upload failed. Check your connection.')
+      setIsUploading(false)
     } finally {
       setIsUploading(false)
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      if (cameraInputRef.current) cameraInputRef.current.value = ''
     }
   }
 
   const isSquare = aspectRatio === 'square'
   const previewClass = isSquare ? 'aspect-square w-28' : 'aspect-video w-full'
   const zoneClass = isSquare ? 'aspect-square w-28' : 'aspect-video w-full'
+
+  // Determine crop aspect ratio for react-easy-crop
+  const cropAspect = isSquare ? 1 : aspectRatio === 'video' ? 16 / 9 : 3 / 1 // Default to 3:1 for banners
 
   return (
     <div className="space-y-2">
@@ -81,6 +118,41 @@ export function ImageUploader({
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
       <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
 
+      {/* Cropper Modal */}
+      {imageToCrop && (
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col">
+          <div className="flex-1 relative">
+            <Cropper
+              image={imageToCrop}
+              crop={crop}
+              zoom={zoom}
+              aspect={cropAspect}
+              onCropChange={setCrop}
+              onCropComplete={onCropComplete}
+              onZoomChange={setZoom}
+              objectFit="contain"
+            />
+          </div>
+          <div className="h-24 bg-zinc-950 px-6 flex items-center justify-between border-t border-white/10 shrink-0">
+             <button
+                type="button"
+                onClick={() => setImageToCrop(null)}
+                className="text-white/70 hover:text-white font-medium text-sm transition-colors"
+             >
+               Cancel
+             </button>
+             <button
+                type="button"
+                onClick={handleConfirmCrop}
+                className="flex items-center gap-2 bg-white text-black px-6 py-2.5 rounded-full font-semibold text-sm hover:bg-zinc-200 transition-colors active:scale-95"
+             >
+               <Check className="w-4 h-4" /> Confirm
+             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Normal View */}
       {url ? (
         /* Preview */
         <div className="flex items-start gap-3">
@@ -97,6 +169,7 @@ export function ImageUploader({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              disabled={isUploading}
             >
               <RefreshCw className="h-3 w-3" /> Change
             </button>
@@ -104,6 +177,7 @@ export function ImageUploader({
               type="button"
               onClick={() => setUrl('')}
               className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+              disabled={isUploading}
             >
               <X className="h-3 w-3" /> Remove
             </button>
