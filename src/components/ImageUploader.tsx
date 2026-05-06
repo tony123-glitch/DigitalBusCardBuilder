@@ -116,7 +116,7 @@ export function ImageUploader({
 
       {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="camera" onChange={handleFileChange} className="hidden" />
 
       {/* Cropper Modal */}
       {imageToCrop && (
@@ -155,8 +155,8 @@ export function ImageUploader({
       {/* Normal View */}
       {url ? (
         /* Preview */
-        <div className="flex items-start gap-3">
-          <div className={`relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 ${previewClass}`}>
+        <div className="flex flex-col sm:flex-row items-start gap-3 w-full">
+          <div className={`relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shrink-0 ${isSquare ? 'aspect-square w-32' : 'aspect-video w-full sm:w-64'}`}>
             <img src={url} alt="Preview" className="w-full h-full object-cover" />
             {isUploading && (
               <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
@@ -164,42 +164,42 @@ export function ImageUploader({
               </div>
             )}
           </div>
-          <div className="flex flex-col gap-2 pt-1">
+          <div className="flex sm:flex-col gap-2 pt-1 w-full sm:w-auto">
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 h-9 px-4 text-xs font-semibold bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
               disabled={isUploading}
             >
-              <RefreshCw className="h-3 w-3" /> Change
+              <RefreshCw className="h-3.5 w-3.5" /> Change
             </button>
             <button
               type="button"
               onClick={() => setUrl('')}
-              className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 h-9 px-4 text-xs font-semibold bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
               disabled={isUploading}
             >
-              <X className="h-3 w-3" /> Remove
+              <X className="h-3.5 w-3.5" /> Remove
             </button>
           </div>
         </div>
       ) : isUploading ? (
         /* Uploading state */
-        <div className={`rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-2 ${zoneClass}`}>
+        <div className={`rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-2 w-full ${isSquare ? 'aspect-square max-w-[160px]' : 'aspect-video'}`}>
           <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
           <span className="text-xs font-medium text-blue-600">Uploading...</span>
         </div>
       ) : (
         /* Upload zone with two options */
-        <div className={`rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center gap-3 ${zoneClass}`}>
-          <div className="p-2 bg-white rounded-xl shadow-sm border border-slate-100">
-            <ImageIcon className="h-4 w-4 text-slate-400" />
+        <div className={`rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 flex flex-col items-center justify-center gap-4 w-full p-6 ${isSquare ? 'aspect-square max-w-[200px] mx-auto' : 'aspect-video'}`}>
+          <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100 shrink-0">
+            <ImageIcon className="h-5 w-5 text-slate-400" />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full justify-center">
             <button
               type="button"
               onClick={() => cameraInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
+              className="flex-1 max-w-[120px] inline-flex items-center justify-center gap-2 h-9 px-3 text-xs font-semibold bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
             >
               <Camera className="h-3.5 w-3.5" />
               Camera
@@ -207,7 +207,7 @@ export function ImageUploader({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
+              className="flex-1 max-w-[120px] inline-flex items-center justify-center gap-2 h-9 px-3 text-xs font-semibold bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
             >
               <FolderOpen className="h-3.5 w-3.5" />
               Browse
