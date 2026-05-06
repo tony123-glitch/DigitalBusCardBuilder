@@ -108,7 +108,7 @@ export default function CardClient({ card }: { card: any }) {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, ease: cinematicEase }}
           className="w-full relative mt-6 rounded-[2rem] overflow-hidden"
-          style={{ height: '28vh', minHeight: '220px', backgroundColor: `${themeColor}20` }}
+          style={{ height: '35vh', minHeight: '260px', backgroundColor: `${themeColor}20` }}
         >
           {card.banner_image_url && (
              <div className="absolute inset-0">
