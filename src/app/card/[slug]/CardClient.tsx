@@ -243,7 +243,7 @@ export default function CardClient({ card }: { card: any }) {
           {/* Tagline & Footer */}
           {card.company_tagline && (
             <motion.div variants={itemVariants} className="pt-6 pb-2 text-center">
-              <p className="text-sm italic font-medium tracking-wide text-white/90">
+              <p className="text-base italic font-medium tracking-wide text-white/90 drop-shadow-md">
                 "{card.company_tagline}"
               </p>
             </motion.div>
