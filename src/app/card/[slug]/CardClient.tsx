@@ -57,9 +57,11 @@ const containerVariants = {
 
 function formatPhoneNumber(phoneNumberString: string) {
   const cleaned = ('' + phoneNumberString).replace(/\D/g, '')
-  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/)
-  if (match) {
-    return '(' + match[1] + ') ' + match[2] + '-' + match[3]
+  if (cleaned.length === 10) {
+    return '+1 ' + cleaned.slice(0, 3) + '-' + cleaned.slice(3, 6) + '-' + cleaned.slice(6)
+  }
+  if (cleaned.length === 11 && cleaned.startsWith('1')) {
+    return '+1 ' + cleaned.slice(1, 4) + '-' + cleaned.slice(4, 7) + '-' + cleaned.slice(7)
   }
   return phoneNumberString
 }
