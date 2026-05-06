@@ -82,5 +82,5 @@ export async function updateCard(id: string, formData: FormData) {
 
   revalidatePath('/admin', 'layout')
   revalidatePath(`/card/${slug}`)
-  redirect('/admin')
+  redirect('/admin?saved=true')
 }

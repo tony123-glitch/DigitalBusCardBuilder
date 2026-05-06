@@ -1,10 +1,10 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Phone, Mail, Globe, MapPin, Download, Share2, ExternalLink } from 'lucide-react'
+import { Phone, Mail, Globe, MapPin, Download, Share2, ExternalLink, ArrowUpRight } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-// Real SVG brand icons
+// Real SVG brand icons - monochrome elite style
 const BrandIcons: Record<string, (props: { className?: string }) => React.ReactElement> = {
   instagram: ({ className }) => (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -43,195 +43,227 @@ const BrandIcons: Record<string, (props: { className?: string }) => React.ReactE
   ),
 }
 
-const platformColors: Record<string, string> = {
-  instagram: '#E1306C',
-  twitter:   '#000000',
-  linkedin:  '#0A66C2',
-  facebook:  '#1877F2',
-  youtube:   '#FF0000',
-  tiktok:    '#000000',
-  github:    '#24292e',
+const cinematicEase = 'easeOut' as const
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: cinematicEase } }
+}
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.2 } }
 }
 
 export default function CardClient({ card }: { card: any }) {
   const [mounted, setMounted] = useState(false)
-  const themeColor = card.theme_color || '#0a0a0a'
+  
+  // Base theme color defaults to a rich metallic gold/slate if not set
+  const themeColor = card.theme_color || '#d4af37' 
 
   useEffect(() => { setMounted(true) }, [])
-  if (!mounted) return <div className="min-h-screen bg-zinc-950" />
+  
+  if (!mounted) {
+    return <div className="min-h-screen bg-[#050505]" />
+  }
 
   const contactItems = [
-    card.phone_number && { href: `tel:${card.phone_number}`, icon: Phone, label: 'Call' },
-    card.email       && { href: `mailto:${card.email}`, icon: Mail, label: 'Email' },
-    card.website     && { href: card.website.startsWith('http') ? card.website : `https://${card.website}`, icon: Globe, label: 'Website', external: true },
+    card.phone_number && { href: `tel:${card.phone_number}`, icon: Phone, label: card.phone_number },
+    card.email       && { href: `mailto:${card.email}`, icon: Mail, label: card.email },
+    card.website     && { href: card.website.startsWith('http') ? card.website : `https://${card.website}`, icon: Globe, label: card.website.replace(/^https?:\/\//, ''), external: true },
     card.location    && { href: `https://maps.google.com/?q=${encodeURIComponent(card.location)}`, icon: MapPin, label: card.location, external: true },
   ].filter(Boolean) as { href: string; icon: any; label: string; external?: boolean }[]
 
   return (
-    <div className="min-h-screen bg-zinc-950 font-sans pb-32 overflow-x-hidden">
-      <div className="relative max-w-sm mx-auto">
+    <div className="min-h-screen bg-[#050505] font-sans pb-32 overflow-x-hidden selection:bg-white/20 text-white relative">
+      
+      {/* Dynamic Cinematic Lighting Background */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0"
+        style={{
+          background: `
+            radial-gradient(ellipse at 50% -20%, ${themeColor}30 0%, transparent 60%),
+            radial-gradient(circle at 100% 40%, ${themeColor}08 0%, transparent 40%),
+            radial-gradient(circle at 0% 100%, ${themeColor}10 0%, transparent 40%)
+          `
+        }}
+      />
 
-        {/* Banner */}
+      <div className="relative z-10 max-w-[420px] mx-auto px-5 sm:px-6">
+
+        {/* Hero Banner Section */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          className="h-52 w-full relative overflow-hidden"
-          style={{ backgroundColor: themeColor }}
+          transition={{ duration: 1.2, ease: cinematicEase }}
+          className="w-full relative mt-6 rounded-[2rem] overflow-hidden"
+          style={{ height: '28vh', minHeight: '220px', backgroundColor: `${themeColor}20` }}
         >
-          {card.banner_image_url ? (
-            <img src={card.banner_image_url} alt="Banner" className="w-full h-full object-cover" />
-          ) : (
-            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${themeColor} 0%, #1a1a2e 100%)` }} />
+          {card.banner_image_url && (
+             <div className="absolute inset-0">
+               <img src={card.banner_image_url} alt="Banner" className="w-full h-full object-cover" />
+               <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/40 to-transparent" />
+             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/30 to-transparent" />
+          {!card.banner_image_url && (
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${themeColor} 0%, transparent 100%)`, opacity: 0.2 }} />
+          )}
         </motion.div>
 
-        {/* Content — overlaps banner */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="relative z-10 -mt-16 px-4 space-y-3"
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="relative z-20 -mt-16 space-y-6"
         >
-          {/* Avatar + Identity */}
-          <div className="flex items-end gap-4">
-            <div className="h-24 w-24 rounded-2xl border-2 border-zinc-800 shadow-2xl overflow-hidden bg-zinc-800 flex items-center justify-center shrink-0">
-              {card.profile_picture_url ? (
-                <img src={card.profile_picture_url} alt={card.owner_name} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl font-bold text-zinc-400">
-                  {card.owner_name?.charAt(0).toUpperCase()}
-                </span>
-              )}
+          {/* Identity & Avatar */}
+          <motion.div variants={itemVariants} className="flex flex-col items-center text-center">
+            <div className="relative mb-5 group">
+               <div className="absolute -inset-1 rounded-full blur-md opacity-30 group-hover:opacity-50 transition duration-1000" style={{ backgroundColor: themeColor }} />
+               <div className="relative h-28 w-28 rounded-full shadow-2xl overflow-hidden bg-[#111] flex items-center justify-center ring-1 ring-white/10">
+                 {card.profile_picture_url ? (
+                   <img src={card.profile_picture_url} alt={card.owner_name} className="w-full h-full object-cover" />
+                 ) : (
+                   <span className="text-3xl font-light text-white tracking-widest">
+                     {card.owner_name?.charAt(0).toUpperCase()}
+                   </span>
+                 )}
+               </div>
             </div>
-            <div className="pb-1 min-w-0">
-              {card.company_name && (
-                <div className="flex items-center gap-1.5 mb-1">
-                  {card.company_logo_url && (
-                    <img src={card.company_logo_url} alt={card.company_name} className="h-4 w-4 rounded object-contain opacity-80" />
-                  )}
-                  <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest truncate">
-                    {card.company_name}
-                  </span>
-                </div>
-              )}
-              <h1 className="text-xl font-bold text-white tracking-tight leading-tight">{card.owner_name}</h1>
-              {card.job_title && (
-                <p className="text-sm text-zinc-400 mt-0.5">{card.job_title}</p>
-              )}
-            </div>
-          </div>
 
-          {/* Bio */}
+            {card.company_name && (
+              <div className="flex items-center justify-center gap-2 mb-2">
+                {card.company_logo_url && (
+                  <img src={card.company_logo_url} alt={card.company_name} className="h-4 w-4 rounded-sm object-contain opacity-90" />
+                )}
+                <span className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em]">
+                  {card.company_name}
+                </span>
+              </div>
+            )}
+            
+            <h1 className="text-[28px] font-medium text-white tracking-tight leading-none mb-2">
+              {card.owner_name}
+            </h1>
+            
+            {card.job_title && (
+              <p className="text-sm font-light text-white/60 tracking-wide">{card.job_title}</p>
+            )}
+          </motion.div>
+
+          {/* Bio - Elegant editorial block */}
           {card.bio && (
-            <div className="rounded-2xl bg-zinc-900 border border-zinc-800 px-4 py-3.5">
-              <p className="text-sm text-zinc-300 leading-relaxed">{card.bio}</p>
-            </div>
+            <motion.div variants={itemVariants} className="text-center px-4">
+              <p className="text-[13px] font-light text-white/70 leading-relaxed">
+                {card.bio}
+              </p>
+            </motion.div>
           )}
 
-          {/* Contact items */}
+          {/* Primary Contact Actions */}
           {contactItems.length > 0 && (
-            <div className="space-y-2">
+            <motion.div variants={itemVariants} className="space-y-2.5 pt-2">
               {contactItems.map(({ href, icon: Icon, label, external }) => (
                 <a
                   key={label}
                   href={href}
                   {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 transition-all active:scale-[0.98] group"
+                  className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/5 border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all active:scale-[0.98] group backdrop-blur-xl"
                 >
-                  <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${themeColor}25`, color: themeColor === '#0a0a0a' ? '#a1a1aa' : themeColor }}>
-                    <Icon className="h-4 w-4" />
+                  <div className="flex items-center justify-center w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" style={{ color: themeColor }}>
+                    <Icon strokeWidth={1.5} className="w-5 h-5" />
                   </div>
-                  <span className="text-sm text-zinc-200 font-medium truncate">{label}</span>
-                  {external && <ExternalLink className="h-3.5 w-3.5 text-zinc-600 ml-auto group-hover:text-zinc-400 transition-colors shrink-0" />}
+                  <span className="text-sm font-light text-white/90 truncate flex-1 tracking-wide">{label}</span>
+                  {external && <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />}
                 </a>
               ))}
-            </div>
+            </motion.div>
           )}
 
-          {/* Social Links */}
+          {/* Social Links - Clean Grid */}
           {card.card_social_links?.length > 0 && (
-            <div className="rounded-2xl bg-zinc-900 border border-zinc-800 px-4 py-4">
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Social</p>
-              <div className="grid grid-cols-2 gap-2">
+            <motion.div variants={itemVariants} className="pt-4">
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-4 text-center">
+                Connect
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
                 {card.card_social_links.map((social: any, idx: number) => {
                   const key = social.platform?.toLowerCase()
                   const Icon = BrandIcons[key]
-                  const color = platformColors[key] || '#71717a'
                   return (
                     <a
                       key={idx}
                       href={social.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 transition-colors active:scale-[0.97]"
+                      className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/[0.08] hover:bg-white/[0.12] transition-all active:scale-[0.95] group backdrop-blur-xl"
                     >
                       {Icon ? (
-                        <Icon className="h-4 w-4 shrink-0" />
+                        <Icon className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
                       ) : (
-                        <div className="h-4 w-4 rounded-sm bg-zinc-600 shrink-0" />
+                        <ArrowUpRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
                       )}
-                      <span className="text-xs font-semibold text-zinc-300 capitalize truncate">
-                        {social.platform}
-                      </span>
                     </a>
                   )
                 })}
               </div>
-            </div>
+            </motion.div>
           )}
 
-          {/* Custom links */}
+          {/* Custom Links */}
           {card.card_custom_buttons?.length > 0 && (
-            <div className="space-y-2">
+            <motion.div variants={itemVariants} className="space-y-2.5 pt-4">
+              <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-4 text-center">
+                Links
+              </p>
               {card.card_custom_buttons.map((btn: any, idx: number) => (
                 <a
                   key={idx}
                   href={btn.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between px-4 py-3 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-600 transition-all active:scale-[0.98] group"
+                  className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08] hover:border-white/[0.15] hover:from-white/[0.08] transition-all active:scale-[0.98] group"
                 >
-                  <span className="text-sm font-semibold text-zinc-200">{btn.label}</span>
-                  <ExternalLink className="h-3.5 w-3.5 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
+                  <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
+                  <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
                 </a>
               ))}
-            </div>
+            </motion.div>
           )}
 
-          {/* Company tagline */}
+          {/* Tagline & Footer */}
           {card.company_tagline && (
-            <p className="text-center text-xs text-zinc-600 italic px-4">{card.company_tagline}</p>
+            <motion.div variants={itemVariants} className="pt-6 pb-2 text-center">
+              <p className="text-xs text-white/40 italic font-light tracking-wide">"{card.company_tagline}"</p>
+            </motion.div>
           )}
 
-          {/* Owner login */}
-          <div className="text-center pb-4">
-            <a href={`/card/${card.slug}/edit/login`} className="text-[10px] text-zinc-700 hover:text-zinc-500 transition-colors tracking-widest uppercase">
-              Owner
+          <motion.div variants={itemVariants} className="text-center pt-8 pb-10">
+            <a href={`/card/${card.slug}/edit/login`} className="text-[9px] text-white/20 hover:text-white/50 transition-colors tracking-[0.2em] uppercase font-bold">
+              Owner Access
             </a>
-          </div>
+          </motion.div>
         </motion.div>
 
-        {/* Sticky CTA Bar */}
+        {/* Floating Action Bar - Ultra Premium */}
         <motion.div
-          initial={{ y: 60, opacity: 0 }}
+          initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5, type: 'spring', stiffness: 260, damping: 24 }}
-          className="fixed bottom-0 left-0 right-0 px-4 pb-5 pt-3 z-50"
-          style={{ background: 'linear-gradient(to top, rgb(9,9,11) 60%, transparent)' }}
+          transition={{ delay: 1, duration: 1, ease: cinematicEase }}
+          className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-10 z-50 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
         >
-          <div className="max-w-sm mx-auto flex gap-2.5">
+          <div className="max-w-[420px] mx-auto flex gap-3 pointer-events-auto">
             <a
               href={`/card/${card.slug}/edit/login`}
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-bold rounded-2xl transition-all active:scale-[0.97] shadow-lg"
-              style={{ backgroundColor: themeColor === '#0a0a0a' ? '#ffffff' : themeColor, color: themeColor === '#0a0a0a' ? '#000000' : '#ffffff' }}
+              className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
+              style={{ backgroundColor: '#ffffff', color: '#000000' }}
             >
-              <Download className="h-4 w-4" />
+              <Download className="w-4 h-4" strokeWidth={2.5} />
               Save Contact
             </a>
             <button
-              className="flex items-center justify-center py-3.5 px-4 bg-zinc-800 text-zinc-200 rounded-2xl font-bold border border-zinc-700 hover:bg-zinc-700 transition-all active:scale-[0.97]"
+              className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all active:scale-[0.97] backdrop-blur-md"
               onClick={() => {
                 if (navigator.share) {
                   navigator.share({ title: card.owner_name, url: window.location.href })
@@ -240,7 +272,7 @@ export default function CardClient({ card }: { card: any }) {
                 }
               }}
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="w-4 h-4" strokeWidth={2} />
             </button>
           </div>
         </motion.div>

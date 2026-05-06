@@ -4,7 +4,8 @@ import { Plus, Edit, ExternalLink, KeySquare, CreditCard } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
+  const { saved } = await searchParams
   const adminClient = createAdminClient()
 
   const { data: cards, error } = await adminClient
@@ -31,6 +32,13 @@ export default async function AdminDashboardPage() {
           New Card
         </Link>
       </div>
+
+      {saved === 'true' && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 font-medium shadow-sm flex items-center justify-between">
+          <span>Card saved successfully.</span>
+          <Link href="/admin" className="text-green-600 hover:text-green-800">Dismiss</Link>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
