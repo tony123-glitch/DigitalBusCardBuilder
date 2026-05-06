@@ -132,11 +132,11 @@ export default function CardClient({ card }: { card: any }) {
             </div>
 
             {card.company_name && (
-              <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="flex items-center justify-center gap-3 mb-2">
                 {card.company_logo_url && (
-                  <img src={card.company_logo_url} alt={card.company_name} className="h-4 w-4 rounded-sm object-contain opacity-90" />
+                  <img src={card.company_logo_url} alt={card.company_name} className="h-7 w-auto max-w-[120px] rounded-sm object-contain opacity-100" />
                 )}
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-[0.2em]">
+                <span className="text-xs font-semibold text-white/80 uppercase tracking-[0.15em]">
                   {card.company_name}
                 </span>
               </div>
