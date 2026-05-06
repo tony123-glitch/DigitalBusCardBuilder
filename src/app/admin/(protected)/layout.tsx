@@ -1,21 +1,11 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { cookies } from 'next/headers'
 import { LogOut, CreditCard, LayoutDashboard, Settings, UserCircle } from 'lucide-react'
-import { logoutAction } from '@/app/admin/login/actions'
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('admin_session')
-
-  if (!session) {
-    redirect('/admin/login')
-  }
-
   return (
     <div className="flex min-h-screen bg-slate-50/50">
       {/* Sidebar */}
@@ -53,19 +43,9 @@ export default async function AdminLayout({
             </div>
             <div className="flex flex-col overflow-hidden">
               <span className="text-sm font-medium text-slate-900 truncate">System Admin</span>
-              <span className="text-xs text-slate-500 truncate">Authenticated</span>
+              <span className="text-xs text-slate-500 truncate">Public Access</span>
             </div>
           </div>
-          <form action={async () => {
-            'use server'
-            await logoutAction()
-            redirect('/admin/login')
-          }}>
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors">
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
-          </form>
         </div>
       </aside>
 
