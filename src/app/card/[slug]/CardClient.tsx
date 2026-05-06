@@ -1,194 +1,150 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Phone, Mail, Globe, MapPin, Download, Share2, ExternalLink } from 'lucide-react'
+import { Phone, Mail, Globe, MapPin, Download, Share2, ExternalLink, Camera, MessageCircle, Briefcase, Users, Video, Code, Music, Link as LinkIcon } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-const platformColors: Record<string, string> = {
-  twitter: 'bg-[#1DA1F2] text-white',
-  linkedin: 'bg-[#0A66C2] text-white',
-  instagram: 'bg-gradient-to-tr from-[#fd5949] to-[#d6249f] text-white',
-  facebook: 'bg-[#1877F2] text-white',
-  youtube: 'bg-[#FF0000] text-white',
-  tiktok: 'bg-black text-white',
+const platformMeta: Record<string, { label: string; icon: any; color: string }> = {
+  instagram: { label: 'Instagram', icon: Camera, color: '#E1306C' },
+  twitter:   { label: 'Twitter / X', icon: MessageCircle, color: '#1DA1F2' },
+  linkedin:  { label: 'LinkedIn', icon: Briefcase, color: '#0A66C2' },
+  facebook:  { label: 'Facebook', icon: Users, color: '#1877F2' },
+  youtube:   { label: 'YouTube', icon: Video, color: '#FF0000' },
+  tiktok:    { label: 'TikTok', icon: Music, color: '#000000' },
+  github:    { label: 'GitHub', icon: Code, color: '#333333' },
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 }
-  }
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 300, damping: 24 } }
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } }
 }
 
 export default function CardClient({ card }: { card: any }) {
   const [mounted, setMounted] = useState(false)
   const themeColor = card.theme_color || '#0F172A'
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
+  useEffect(() => { setMounted(true) }, [])
   if (!mounted) return <div className="min-h-screen bg-slate-50" />
 
-  const vcardUrl = '#' // Placeholder
+  const contactItems = [
+    card.phone_number && { href: `tel:${card.phone_number}`, icon: Phone, label: 'Call' },
+    card.email       && { href: `mailto:${card.email}`, icon: Mail, label: 'Email' },
+    card.website     && { href: card.website.startsWith('http') ? card.website : `https://${card.website}`, icon: Globe, label: 'Web', external: true },
+    card.location    && { href: `https://maps.google.com/?q=${encodeURIComponent(card.location)}`, icon: MapPin, label: 'Map', external: true },
+  ].filter(Boolean) as { href: string; icon: any; label: string; external?: boolean }[]
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans selection:bg-blue-100 pb-32 overflow-x-hidden">
-      {/* Animated Background Gradient overlay */}
-      <div 
-        className="fixed inset-0 opacity-[0.03] z-0 pointer-events-none"
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 0%, ${themeColor} 0%, transparent 70%)`
-        }}
+    <div className="min-h-screen bg-[#f8fafc] font-sans pb-36 overflow-x-hidden">
+      {/* Subtle gradient bg */}
+      <div
+        className="fixed inset-0 opacity-[0.04] pointer-events-none z-0"
+        style={{ backgroundImage: `radial-gradient(ellipse at 50% 0%, ${themeColor} 0%, transparent 65%)` }}
       />
 
-      <div className="relative z-10 max-w-md mx-auto">
-        {/* Banner Section */}
-        <motion.div 
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="h-56 w-full relative overflow-hidden rounded-b-[2.5rem] shadow-sm"
+      <div className="relative z-10 max-w-sm mx-auto">
+        {/* Banner */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+          className="h-52 w-full relative overflow-hidden"
           style={{ backgroundColor: themeColor }}
         >
           {card.banner_image_url && (
-            <img 
-              src={card.banner_image_url} 
-              alt="Banner" 
-              className="w-full h-full object-cover opacity-90"
-            />
+            <img src={card.banner_image_url} alt="Banner" className="w-full h-full object-cover" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
         </motion.div>
 
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="px-5 -mt-20 relative z-20 space-y-4"
-        >
-          {/* Profile Picture */}
-          <motion.div variants={itemVariants} className="flex justify-center mb-2">
-            <div className="relative">
-              <div className="absolute -inset-1 bg-white rounded-full blur-sm opacity-50" />
-              <div className="h-36 w-36 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white flex items-center justify-center relative z-10">
-                {card.profile_picture_url ? (
-                  <img src={card.profile_picture_url} alt={card.owner_name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-5xl font-bold text-slate-300" style={{ color: themeColor }}>
-                    {card.owner_name.charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              {/* Optional verification badge could go here */}
+        <div className="px-4 -mt-16 relative z-20 space-y-3">
+          {/* Avatar */}
+          <motion.div custom={0} variants={fadeUp} initial="hidden" animate="show" className="flex justify-center">
+            <div className="h-32 w-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-white flex items-center justify-center">
+              {card.profile_picture_url ? (
+                <img src={card.profile_picture_url} alt={card.owner_name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-4xl font-bold" style={{ color: themeColor }}>
+                  {card.owner_name?.charAt(0).toUpperCase()}
+                </span>
+              )}
             </div>
           </motion.div>
 
-          {/* Core Info - Glassmorphism Bento Card */}
-          <motion.div variants={itemVariants} className="bg-white/70 backdrop-blur-xl border border-white rounded-3xl p-6 text-center shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{card.owner_name}</h1>
+          {/* Identity Card */}
+          <motion.div custom={1} variants={fadeUp} initial="hidden" animate="show"
+            className="bg-white rounded-2xl px-5 py-5 text-center shadow-sm border border-slate-100"
+          >
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{card.owner_name}</h1>
             {card.job_title && (
-              <p className="text-slate-600 font-medium mt-1">{card.job_title}</p>
+              <p className="text-slate-500 font-medium mt-0.5 text-sm">{card.job_title}</p>
             )}
             {card.company_name && (
-              <div className="flex items-center justify-center gap-2 mt-3 p-2 bg-slate-50/50 rounded-2xl mx-auto inline-flex">
+              <div className="flex items-center justify-center gap-1.5 mt-3">
                 {card.company_logo_url && (
-                  <img src={card.company_logo_url} alt={card.company_name} className="h-6 w-6 rounded border border-slate-200 object-cover" />
+                  <img src={card.company_logo_url} alt={card.company_name} className="h-5 w-5 rounded object-contain" />
                 )}
-                <span className="text-sm font-bold text-slate-800">{card.company_name}</span>
+                <span className="text-sm font-semibold text-slate-700">{card.company_name}</span>
               </div>
             )}
             {card.company_tagline && (
-              <p className="text-xs text-slate-500 mt-2 font-medium">{card.company_tagline}</p>
+              <p className="text-xs text-slate-400 mt-1">{card.company_tagline}</p>
             )}
           </motion.div>
 
-          {/* Quick Contact Links - Bento Grid */}
-          <motion.div variants={itemVariants} className="grid grid-cols-4 gap-3">
-            {card.phone_number && (
-              <a href={`tel:${card.phone_number}`} className="flex flex-col items-center justify-center p-4 bg-white/70 backdrop-blur-md rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white hover:bg-white transition-all active:scale-95 group">
-                <div className="p-2.5 rounded-full mb-1 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
-                  <Phone className="h-5 w-5" />
-                </div>
-                <span className="text-[11px] font-semibold text-slate-600">Call</span>
-              </a>
-            )}
-            {card.email && (
-              <a href={`mailto:${card.email}`} className="flex flex-col items-center justify-center p-4 bg-white/70 backdrop-blur-md rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white hover:bg-white transition-all active:scale-95 group">
-                <div className="p-2.5 rounded-full mb-1 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
-                  <Mail className="h-5 w-5" />
-                </div>
-                <span className="text-[11px] font-semibold text-slate-600">Email</span>
-              </a>
-            )}
-            {card.website && (
-              <a href={card.website.startsWith('http') ? card.website : `https://${card.website}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 bg-white/70 backdrop-blur-md rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white hover:bg-white transition-all active:scale-95 group">
-                <div className="p-2.5 rounded-full mb-1 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
-                  <Globe className="h-5 w-5" />
-                </div>
-                <span className="text-[11px] font-semibold text-slate-600">Web</span>
-              </a>
-            )}
-            {card.location && (
-              <a href={`https://maps.google.com/?q=${encodeURIComponent(card.location)}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center p-4 bg-white/70 backdrop-blur-md rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-white hover:bg-white transition-all active:scale-95 group">
-                <div className="p-2.5 rounded-full mb-1 group-hover:scale-110 transition-transform" style={{ backgroundColor: `${themeColor}15`, color: themeColor }}>
-                  <MapPin className="h-5 w-5" />
-                </div>
-                <span className="text-[11px] font-semibold text-slate-600">Map</span>
-              </a>
-            )}
-          </motion.div>
-
-          {/* Bio */}
-          {card.bio && (
-            <motion.div variants={itemVariants} className="bg-white/70 backdrop-blur-xl border border-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: themeColor }} />
-              <h3 className="text-xs font-bold text-slate-400 mb-3 tracking-widest uppercase ml-2">About</h3>
-              <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap ml-2">{card.bio}</p>
-            </motion.div>
-          )}
-
-          {/* Custom Links */}
-          {card.card_custom_buttons && card.card_custom_buttons.length > 0 && (
-            <motion.div variants={itemVariants} className="space-y-3">
-              {card.card_custom_buttons.map((btn: any, idx: number) => (
+          {/* Quick Contact Grid */}
+          {contactItems.length > 0 && (
+            <motion.div custom={2} variants={fadeUp} initial="hidden" animate="show"
+              className={`grid gap-2 ${contactItems.length === 1 ? 'grid-cols-1' : contactItems.length === 2 ? 'grid-cols-2' : contactItems.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}
+            >
+              {contactItems.map(({ href, icon: Icon, label, external }) => (
                 <a
-                  key={idx}
-                  href={btn.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-[0_4px_15px_rgb(0,0,0,0.02)] border border-white/50 hover:shadow-md transition-all active:scale-[0.98] group"
+                  key={label}
+                  href={href}
+                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  className="flex flex-col items-center justify-center gap-1.5 py-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all active:scale-95"
                 >
-                  <span className="font-semibold text-slate-800">{btn.label}</span>
-                  <div className="h-8 w-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-slate-100 transition-colors">
-                    <ExternalLink className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />
+                  <div className="p-2 rounded-full" style={{ backgroundColor: `${themeColor}14`, color: themeColor }}>
+                    <Icon className="h-4 w-4" />
                   </div>
+                  <span className="text-[11px] font-semibold text-slate-500">{label}</span>
                 </a>
               ))}
             </motion.div>
           )}
 
+          {/* Bio */}
+          {card.bio && (
+            <motion.div custom={3} variants={fadeUp} initial="hidden" animate="show"
+              className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100"
+            >
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">About</p>
+              <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">{card.bio}</p>
+            </motion.div>
+          )}
+
           {/* Social Links */}
-          {card.card_social_links && card.card_social_links.length > 0 && (
-            <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-              <div className="flex flex-wrap justify-center gap-2.5">
+          {card.card_social_links?.length > 0 && (
+            <motion.div custom={4} variants={fadeUp} initial="hidden" animate="show"
+              className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-slate-100"
+            >
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Connect</p>
+              <div className="flex flex-col gap-2">
                 {card.card_social_links.map((social: any, idx: number) => {
-                  const bgClass = platformColors[social.platform.toLowerCase()] || 'bg-slate-800 text-white'
+                  const meta = platformMeta[social.platform?.toLowerCase()] || { label: social.platform, icon: LinkIcon, color: '#64748b' }
+                  const Icon = meta.icon
                   return (
                     <a
                       key={idx}
                       href={social.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`px-4 py-2 rounded-xl text-[13px] font-semibold shadow-sm hover:shadow-md transition-all active:scale-95 flex-grow sm:flex-grow-0 text-center ${bgClass}`}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors active:scale-[0.98] group"
                     >
-                      {social.platform.charAt(0).toUpperCase() + social.platform.slice(1)}
+                      <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${meta.color}15`, color: meta.color }}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">{meta.label}</span>
+                      <ExternalLink className="h-3.5 w-3.5 text-slate-300 ml-auto group-hover:text-slate-500 transition-colors" />
                     </a>
                   )
                 })}
@@ -196,42 +152,62 @@ export default function CardClient({ card }: { card: any }) {
             </motion.div>
           )}
 
-          {/* Footer Link to Edit */}
-          <motion.div variants={itemVariants} className="text-center mt-6 pt-4 pb-12">
-            <a href={`/card/${card.slug}/edit/login`} className="text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors tracking-wide uppercase">
+          {/* Custom Links */}
+          {card.card_custom_buttons?.length > 0 && (
+            <motion.div custom={5} variants={fadeUp} initial="hidden" animate="show" className="space-y-2">
+              {card.card_custom_buttons.map((btn: any, idx: number) => (
+                <a
+                  key={idx}
+                  href={btn.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between px-4 py-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all active:scale-[0.98] group"
+                >
+                  <span className="font-semibold text-slate-800 text-sm">{btn.label}</span>
+                  <ExternalLink className="h-4 w-4 text-slate-300 group-hover:text-slate-600 transition-colors" />
+                </a>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Owner login footer */}
+          <motion.div custom={6} variants={fadeUp} initial="hidden" animate="show" className="text-center pt-2 pb-4">
+            <a href={`/card/${card.slug}/edit/login`} className="text-[11px] text-slate-300 hover:text-slate-500 transition-colors tracking-widest uppercase">
               Owner Login
             </a>
           </motion.div>
-        </motion.div>
+        </div>
 
-        {/* Sticky Floating Action Buttons */}
-        <motion.div 
-          initial={{ y: 100, opacity: 0 }}
+        {/* Sticky CTA Bar */}
+        <motion.div
+          initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.8, type: 'spring', stiffness: 300, damping: 25 }}
-          className="fixed bottom-6 left-0 right-0 px-5 z-50 pointer-events-none"
+          transition={{ delay: 0.5, type: 'spring', stiffness: 300, damping: 28 }}
+          className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 z-50 bg-gradient-to-t from-[#f8fafc] via-[#f8fafc]/90 to-transparent pointer-events-none"
         >
-          <div className="max-w-md mx-auto flex gap-3 pointer-events-auto">
+          <div className="max-w-sm mx-auto flex gap-2.5 pointer-events-auto">
             <a
-              href={vcardUrl}
-              className="flex-1 flex items-center justify-center gap-2 py-4 px-4 text-white rounded-2xl font-bold shadow-xl shadow-slate-900/20 hover:shadow-2xl transition-all active:scale-95"
+              href={`/card/${card.slug}/edit/login`}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 text-white rounded-2xl font-bold text-sm shadow-lg transition-all active:scale-[0.98]"
               style={{ backgroundColor: themeColor }}
             >
-              <Download className="h-5 w-5" />
+              <Download className="h-4 w-4" />
               Save Contact
             </a>
             <button
-              className="flex items-center justify-center py-4 px-5 bg-white text-slate-900 rounded-2xl font-bold shadow-xl shadow-slate-200/50 hover:bg-slate-50 transition-all active:scale-95 border border-slate-100"
+              className="flex items-center justify-center py-3.5 px-4 bg-white text-slate-900 rounded-2xl font-bold shadow-sm border border-slate-200 hover:bg-slate-50 transition-all active:scale-[0.98]"
               onClick={() => {
                 if (navigator.share) {
                   navigator.share({
-                    title: `${card.owner_name} - ${card.company_name || 'Digital Business Card'}`,
+                    title: `${card.owner_name}${card.company_name ? ` — ${card.company_name}` : ''}`,
                     url: window.location.href,
                   })
+                } else {
+                  navigator.clipboard?.writeText(window.location.href)
                 }
               }}
             >
-              <Share2 className="h-5 w-5" />
+              <Share2 className="h-4 w-4" />
             </button>
           </div>
         </motion.div>

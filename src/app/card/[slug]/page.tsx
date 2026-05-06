@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
 import CardClient from './CardClient'
 
@@ -24,13 +24,19 @@ export default async function PublicCardPage({ params }: { params: Promise<{ slu
     throw new Error(`Card not found with slug: ${slug}`)
   }
 
-  // If not published, only logged-in admin should see it
+  // If not published, return not found rather than exposing an error
   if (!card.is_published) {
-    const supabase = await createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (!user) {
-      throw new Error(`Unauthorized. Card is unpublished and no admin session found. Auth error: ${authError?.message}`)
-    }
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f8fafc] p-4 font-sans">
+        <div className="text-center max-w-xs">
+          <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">🔒</span>
+          </div>
+          <h1 className="text-base font-semibold text-slate-900">Card Not Available</h1>
+          <p className="text-sm text-slate-500 mt-1">This card is not yet published.</p>
+        </div>
+      </div>
+    )
   }
 
   return <CardClient card={card} />
