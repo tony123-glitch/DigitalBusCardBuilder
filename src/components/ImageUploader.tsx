@@ -102,7 +102,7 @@ export function ImageUploader({
   const zoneClass = isSquare ? 'aspect-square w-28' : 'aspect-video w-full'
 
   // Determine crop aspect ratio for react-easy-crop
-  const cropAspect = isSquare ? 1 : aspectRatio === 'video' ? 16 / 9 : 2 / 1 // Default to 2:1 for taller banners
+  const cropAspect = isSquare ? 1 : aspectRatio === 'video' ? 16 / 9 : 3 / 1 // Default to 3:1 for wide banners
 
   return (
     <div className="space-y-2">

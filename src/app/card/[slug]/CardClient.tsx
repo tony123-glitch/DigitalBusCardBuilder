@@ -100,7 +100,7 @@ export default function CardClient({ card }: { card: any }) {
         }}
       />
 
-      <div className="relative z-10 max-w-[420px] mx-auto px-5 sm:px-6">
+      <div className="relative z-10 max-w-[480px] mx-auto px-5 sm:px-6">
 
         {/* Hero Banner Section */}
         <motion.div
@@ -108,7 +108,7 @@ export default function CardClient({ card }: { card: any }) {
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, ease: cinematicEase }}
           className="w-full relative mt-6 rounded-[2rem] overflow-hidden"
-          style={{ height: '35vh', minHeight: '260px', backgroundColor: `${themeColor}20` }}
+          style={{ height: '28vh', minHeight: '220px', backgroundColor: `${themeColor}20` }}
         >
           {card.banner_image_url && (
              <div className="absolute inset-0">
@@ -266,7 +266,7 @@ export default function CardClient({ card }: { card: any }) {
           className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-10 z-50 pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
         >
-          <div className="max-w-[420px] mx-auto flex gap-3 pointer-events-auto">
+          <div className="max-w-[480px] mx-auto flex gap-3 pointer-events-auto">
             <button
               onClick={() => {
                 let vCardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${card.owner_name}\nN:${card.owner_name};;;;\n`
