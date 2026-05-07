@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus, X, Link as LinkIcon, Camera, MessageCircle, Briefcase, Users, Video, Code, Music, GripVertical } from 'lucide-react'
+import { Plus, X, Link as LinkIcon, Camera, MessageCircle, Briefcase, Users, Video, Code, Music, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -25,6 +25,7 @@ export interface SocialLink {
 export interface CustomButton {
   label: string
   url: string
+  type?: 'link' | 'phone'  // defaults to 'link' for backwards compatibility
 }
 
 interface SocialLinksEditorProps {
@@ -40,7 +41,6 @@ export default function SocialLinksEditor({
   onLinksChange,
   onCustomButtonsChange
 }: SocialLinksEditorProps) {
-  // Filter out any hidden metadata links (like _avatar_x) from the UI
   const hiddenMeta = initialLinks.filter(l => l.platform.startsWith('_'))
   const [links, setLinks] = useState<SocialLink[]>(initialLinks.filter(l => !l.platform.startsWith('_')))
   const [customButtons, setCustomButtons] = useState<CustomButton[]>(initialCustomButtons)
@@ -65,16 +65,16 @@ export default function SocialLinksEditor({
     onLinksChange?.([...hiddenMeta, ...newLinks])
   }
 
-  // Custom Buttons
-  const addCustomButton = () => {
-    const newBtns = [...customButtons, { label: 'My Website', url: '' }]
+  // Custom Buttons / Numbers
+  const addCustomItem = (type: 'link' | 'phone') => {
+    const newBtns = [...customButtons, { label: type === 'phone' ? 'Call Us' : 'Visit My Website', url: '', type }]
     setCustomButtons(newBtns)
     onCustomButtonsChange?.(newBtns)
   }
 
   const updateCustomButton = (index: number, field: keyof CustomButton, value: string) => {
     const newBtns = [...customButtons]
-    newBtns[index][field] = value
+    newBtns[index] = { ...newBtns[index], [field]: value }
     setCustomButtons(newBtns)
     onCustomButtonsChange?.(newBtns)
   }
@@ -89,7 +89,7 @@ export default function SocialLinksEditor({
     <div className="space-y-8">
       {/* Social Icons Section */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-white/90">Social Icons</h3>
+        <h3 className="text-sm font-semibold text-zinc-100">Social Icons</h3>
         {links.length > 0 && (
           <div className="space-y-3">
             {links.map((link, index) => (
@@ -156,57 +156,74 @@ export default function SocialLinksEditor({
 
       <div className="h-px bg-zinc-800" />
 
-      {/* Custom Buttons Section */}
+      {/* Custom Links & Numbers Section */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-zinc-100">Custom Links</h3>
+        <h3 className="text-sm font-semibold text-zinc-100">Custom Links & Numbers</h3>
+
         {customButtons.length > 0 && (
           <div className="space-y-3">
-            {customButtons.map((btn, index) => (
-              <div key={index} className="flex items-start gap-2 p-3 bg-zinc-900 rounded-xl border border-zinc-800">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    value={btn.label}
-                    onChange={(e) => updateCustomButton(index, 'label', e.target.value)}
-                    placeholder="Button Label (e.g. Visit my Website)"
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-9"
-                    required
-                  />
-                  <Input
-                    value={btn.url}
-                    onChange={(e) => updateCustomButton(index, 'url', e.target.value)}
-                    placeholder="https://..."
-                    className="bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-9"
-                    required
-                  />
+            {customButtons.map((btn, index) => {
+              const isPhone = btn.type === 'phone'
+              return (
+                <div key={index} className="flex items-start gap-2 p-3 bg-zinc-900 rounded-xl border border-zinc-800">
+                  {/* Type badge */}
+                  <div className={`shrink-0 mt-1.5 flex items-center justify-center w-7 h-7 rounded-lg ${isPhone ? 'bg-green-500/10 text-green-400' : 'bg-blue-500/10 text-blue-400'}`}>
+                    {isPhone ? <Phone className="w-3.5 h-3.5" /> : <LinkIcon className="w-3.5 h-3.5" />}
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <Input
+                      value={btn.label}
+                      onChange={(e) => updateCustomButton(index, 'label', e.target.value)}
+                      placeholder={isPhone ? 'Label (e.g. Office Line)' : 'Label (e.g. My Website)'}
+                      className="bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-9"
+                    />
+                    <Input
+                      value={btn.url}
+                      onChange={(e) => updateCustomButton(index, 'url', e.target.value)}
+                      placeholder={isPhone ? '+1 555-000-0000' : 'https://...'}
+                      className="bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-9"
+                      type={isPhone ? 'tel' : 'url'}
+                    />
+                  </div>
+                  
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeCustomButton(index)}
+                    className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 shrink-0 h-9 w-9 mt-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
-                
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeCustomButton(index)}
-                  className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 shrink-0 h-9 w-9 mt-1"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
         {customButtons.length === 0 && (
           <div className="text-center p-4 border border-dashed border-zinc-800 rounded-xl bg-zinc-900">
-            <p className="text-xs text-zinc-500">No custom links added yet.</p>
+            <p className="text-xs text-zinc-500">No custom links or numbers added yet.</p>
           </div>
         )}
 
-        <Button
-          type="button"
-          onClick={addCustomButton}
-          className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-none h-9 text-xs"
-        >
-          <Plus className="mr-2 h-3.5 w-3.5" /> Add Custom Link
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            onClick={() => addCustomItem('link')}
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-none h-9 text-xs"
+          >
+            <LinkIcon className="mr-1.5 h-3.5 w-3.5" /> Add Link
+          </Button>
+          <Button
+            type="button"
+            onClick={() => addCustomItem('phone')}
+            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-none h-9 text-xs"
+          >
+            <Phone className="mr-1.5 h-3.5 w-3.5" /> Add Number
+          </Button>
+        </div>
       </div>
     </div>
   )

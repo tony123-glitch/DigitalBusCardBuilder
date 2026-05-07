@@ -427,31 +427,64 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
                 </div>
               )}
 
-              {/* Custom Buttons */}
+              {/* Custom Links & Numbers */}
               {(card.card_custom_buttons?.length > 0 || isEditable) && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-center gap-2 mb-4">
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Links</p>
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Links & Numbers</p>
                     {isEditable && (
                       <button onClick={() => setShowLinksEditor(true)} className="text-[10px] bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 uppercase tracking-widest transition-colors font-bold flex items-center gap-1">
-                        <Settings2 className="w-3 h-3" /> Edit Links
+                        <Settings2 className="w-3 h-3" /> Edit
                       </button>
                     )}
                   </div>
-                  {card.card_custom_buttons?.map((btn: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08]"
-                    >
-                      <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
-                      <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30" />
-                    </div>
-                  ))}
+                  {card.card_custom_buttons?.map((btn: any, idx: number) => {
+                    const isPhone = btn.type === 'phone'
+                    const href = isPhone
+                      ? `tel:${btn.url?.replace(/\s/g, '')}`
+                      : (btn.url?.startsWith('http') ? btn.url : `https://${btn.url}`)
+
+                    return isEditable ? (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08]"
+                      >
+                        <div className="flex items-center gap-3">
+                          {isPhone
+                            ? <Phone strokeWidth={1.5} className="w-4 h-4 text-white/40" />
+                            : <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/40" />
+                          }
+                          <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
+                        </div>
+                        <span className={`text-[10px] uppercase tracking-widest font-bold ${isPhone ? 'text-green-400/60' : 'text-blue-400/60'}`}>
+                          {isPhone ? 'Phone' : 'Link'}
+                        </span>
+                      </div>
+                    ) : (
+                      <a
+                        key={idx}
+                        href={href}
+                        target={isPhone ? '_self' : '_blank'}
+                        rel={isPhone ? undefined : 'noopener noreferrer'}
+                        className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          {isPhone
+                            ? <Phone strokeWidth={1.5} className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
+                            : <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
+                          }
+                          <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
+                        </div>
+                        <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
+                      </a>
+                    )
+                  })}
                   {card.card_custom_buttons?.length === 0 && isEditable && (
-                    <div className="text-xs text-white/30 italic text-center">No custom links added yet</div>
+                    <div className="text-xs text-white/30 italic text-center">No custom links or numbers added yet</div>
                   )}
                 </div>
               )}
+
 
             </motion.div>
           )}
