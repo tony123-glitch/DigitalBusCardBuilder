@@ -489,14 +489,49 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
             style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
           >
             <div className="max-w-[480px] mx-auto flex gap-3 pointer-events-auto">
-              <a
-                href={`/api/vcard/${card.id}/contact.vcf`}
+              <button
+                onClick={async () => {
+                  const ua = navigator.userAgent
+                  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+                  const isSafariIOS = isIOS && /^((?!CriOS|FxiOS|OPiOS|mercury).)*Safari/i.test(ua)
+
+                  // Safari on iOS: direct URL navigation to .vcf opens Add to Contacts natively
+                  if (isSafariIOS) {
+                    window.location.href = `/api/vcard/${card.id}/contact.vcf`
+                    return
+                  }
+
+                  // All other browsers: fetch the vcard and share as a File
+                  // On iOS this shows the share sheet with "Add to Contacts" at the top
+                  // On Android Chrome this does the same
+                  try {
+                    const res = await fetch(`/api/vcard/${card.id}/contact.vcf`)
+                    const blob = await res.blob()
+                    const fileName = `${card.owner_name?.replace(/\s+/g, '_') || 'contact'}.vcf`
+                    const file = new File([blob], fileName, { type: 'text/x-vcard' })
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                      await navigator.share({ files: [file], title: 'Add Contact' })
+                      return
+                    }
+                  } catch {
+                    // Share API unavailable or cancelled — fall through to download
+                  }
+
+                  // Final fallback: regular download (desktop browsers)
+                  const a = document.createElement('a')
+                  a.href = `/api/vcard/${card.id}/contact.vcf`
+                  a.download = `${card.owner_name?.replace(/\s+/g, '_') || 'contact'}.vcf`
+                  document.body.appendChild(a)
+                  a.click()
+                  document.body.removeChild(a)
+                }}
                 className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
                 style={{ backgroundColor: '#ffffff', color: '#000000' }}
               >
                 <Download className="w-4 h-4" strokeWidth={2.5} />
                 Save Contact
-              </a>
+              </button>
               <button
                 className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all active:scale-[0.97] backdrop-blur-md"
                 onClick={() => {
