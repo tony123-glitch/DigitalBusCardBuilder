@@ -13,6 +13,7 @@ export interface ImageUploaderProps {
   contextSlug?: string
   description?: string
   aspectRatio?: 'square' | 'video' | 'auto'
+  onUploadSuccess?: (url: string) => void
 }
 
 export function ImageUploader({ 
@@ -21,7 +22,8 @@ export function ImageUploader({
   defaultValue = '', 
   contextSlug,
   description,
-  aspectRatio = 'auto'
+  aspectRatio = 'auto',
+  onUploadSuccess
 }: ImageUploaderProps) {
   const [url, setUrl] = useState(defaultValue)
   const [isUploading, setIsUploading] = useState(false)
@@ -87,6 +89,7 @@ export function ImageUploader({
         setError(res.error)
       } else if (res.url) {
         setUrl(res.url)
+        onUploadSuccess?.(res.url)
       }
     } catch (e) {
       console.error(e)
@@ -116,7 +119,7 @@ export function ImageUploader({
 
       {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="camera" onChange={handleFileChange} className="hidden" />
+      <input ref={cameraInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
 
       {/* Cropper Modal */}
       {imageToCrop && (

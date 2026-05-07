@@ -1,8 +1,11 @@
 'use client'
 
-import { motion } from 'framer-motion'
-import { Phone, Mail, Globe, MapPin, Download, Share2, ExternalLink, ArrowUpRight } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Phone, Mail, Globe, MapPin, Download, Share2, ExternalLink, ArrowUpRight, Camera as CameraIcon, Check, Settings2, Plus, GripVertical, Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { ImageUploader } from '@/components/ImageUploader'
+import SocialLinksEditor from '@/components/SocialLinksEditor'
+import { saveCustomerCard } from '@/app/actions/customer'
 
 // Real SVG brand icons - monochrome elite style
 const BrandIcons: Record<string, (props: { className?: string }) => React.ReactElement> = {
@@ -66,10 +69,21 @@ function formatPhoneNumber(phoneNumberString: string) {
   return phoneNumberString
 }
 
-export default function CardClient({ card }: { card: any }) {
+export default function CardClient({ card: initialCard, isEditable = false, editToken }: { card: any, isEditable?: boolean, editToken?: string }) {
   const [mounted, setMounted] = useState(false)
+  const [card, setCard] = useState(initialCard)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Extract avatar_x from custom social links metadata hack
+  const savedAvatarXObj = card.card_social_links?.find((s: any) => s.platform === '_avatar_x')
+  const [avatarX, setAvatarX] = useState<number>(savedAvatarXObj ? Number(savedAvatarXObj.url) : 0)
+  const [isDraggingAvatar, setIsDraggingAvatar] = useState(false)
+
+  // Modals
+  const [activeUploader, setActiveUploader] = useState<'profile_picture_url' | 'banner_image_url' | 'company_logo_url' | null>(null)
+  const [showLinksEditor, setShowLinksEditor] = useState(false)
+  const [showColorPicker, setShowColorPicker] = useState(false)
   
-  // Base theme color defaults to a rich metallic gold/slate if not set
   const themeColor = card.theme_color || '#d4af37' 
 
   useEffect(() => { setMounted(true) }, [])
@@ -78,19 +92,110 @@ export default function CardClient({ card }: { card: any }) {
     return <div className="min-h-screen bg-[#050505]" />
   }
 
+  const handleTextChange = (field: string, value: string) => {
+    if (!isEditable) return
+    setCard((prev: any) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSaveAndPublish = async () => {
+    if (!isEditable) return
+    setIsSaving(true)
+    try {
+      // Bundle avatarX into social links
+      const baseSocials = (card.card_social_links || []).filter((s: any) => s.platform !== '_avatar_x')
+      const updatedSocials = [...baseSocials, { platform: '_avatar_x', url: String(avatarX) }]
+
+      const formData = new FormData()
+      formData.append('token', editToken || '')
+      formData.append('owner_name', card.owner_name || '')
+      formData.append('job_title', card.job_title || '')
+      formData.append('company_name', card.company_name || '')
+      formData.append('company_tagline', card.company_tagline || '')
+      formData.append('bio', card.bio || '')
+      formData.append('phone_number', card.phone_number || '')
+      formData.append('email', card.email || '')
+      formData.append('website', card.website || '')
+      formData.append('location', card.location || '')
+      formData.append('theme_color', card.theme_color || '#d4af37')
+      formData.append('card_social_links', JSON.stringify(updatedSocials))
+      formData.append('card_custom_buttons', JSON.stringify(card.card_custom_buttons || []))
+
+      const result = await saveCustomerCard(formData)
+      if (result?.error) {
+        alert('Failed to save: ' + result.error)
+      } else {
+        alert('Published successfully!')
+      }
+    } catch (e) {
+      alert('An error occurred while saving.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // --- Render Helpers ---
+
+  const InlineInput = ({ value, field, placeholder, className, multiline = false, emptyStateText = "Tap to add text" }: any) => {
+    if (!isEditable) {
+      if (!value) return null
+      return multiline ? <p className={className}>{value}</p> : <span className={className}>{value}</span>
+    }
+    
+    const isEmpty = !value
+    const inputClass = `${className} bg-transparent outline-none w-full text-center border border-dashed hover:border-white/20 focus:border-white/50 focus:bg-white/5 rounded-md transition-all placeholder:text-white/20 ${isEmpty ? 'border-white/10 opacity-60' : 'border-transparent'}`
+    
+    if (multiline) {
+      return (
+        <textarea
+          value={value || ''}
+          onChange={(e) => handleTextChange(field, e.target.value)}
+          placeholder={placeholder || emptyStateText}
+          className={`${inputClass} resize-none overflow-hidden px-2`}
+          rows={3}
+        />
+      )
+    }
+
+    return (
+      <input
+        type="text"
+        value={value || ''}
+        onChange={(e) => handleTextChange(field, e.target.value)}
+        placeholder={placeholder || emptyStateText}
+        className={`${inputClass} px-1`}
+      />
+    )
+  }
+
+  const ImageEditOverlay = ({ field, rounded = false, label }: { field: 'profile_picture_url' | 'banner_image_url' | 'company_logo_url', rounded?: boolean, label: string }) => {
+    if (!isEditable) return null
+    return (
+      <div 
+        className={`absolute inset-0 z-10 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer ${rounded ? 'rounded-full' : ''}`}
+        onClick={(e) => { e.preventDefault(); setActiveUploader(field) }}
+      >
+        <div className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 text-white text-xs font-semibold shadow-xl">
+          <CameraIcon className="w-3.5 h-3.5" /> {label}
+        </div>
+      </div>
+    )
+  }
+
   const contactItems = [
-    card.phone_number && { href: `tel:${card.phone_number}`, icon: Phone, label: formatPhoneNumber(card.phone_number) },
-    card.email       && { href: `mailto:${card.email}`, icon: Mail, label: card.email },
-    card.website     && { href: card.website.startsWith('http') ? card.website : `https://${card.website}`, icon: Globe, label: card.website.replace(/^https?:\/\//, ''), external: true },
-    card.location    && { href: `https://maps.google.com/?q=${encodeURIComponent(card.location)}`, icon: MapPin, label: card.location, external: true },
-  ].filter(Boolean) as { href: string; icon: any; label: string; external?: boolean }[]
+    { key: 'phone_number', icon: Phone, label: card.phone_number ? formatPhoneNumber(card.phone_number) : '', raw: card.phone_number },
+    { key: 'email', icon: Mail, label: card.email, raw: card.email },
+    { key: 'website', icon: Globe, label: card.website?.replace(/^https?:\/\//, ''), raw: card.website },
+    { key: 'location', icon: MapPin, label: card.location, raw: card.location },
+  ]
+
+  const activeContactItems = isEditable ? contactItems : contactItems.filter(i => i.raw)
 
   return (
     <div className="min-h-screen bg-[#050505] font-sans pb-32 overflow-x-hidden selection:bg-white/20 text-white relative">
       
       {/* Dynamic Cinematic Lighting Background */}
       <div 
-        className="fixed inset-0 pointer-events-none z-0"
+        className="fixed inset-0 pointer-events-none z-0 transition-colors duration-1000"
         style={{
           background: `
             radial-gradient(ellipse at 50% -20%, ${themeColor}30 0%, transparent 60%),
@@ -113,12 +218,13 @@ export default function CardClient({ card }: { card: any }) {
           {card.banner_image_url && (
              <div className="absolute inset-0">
                <img src={card.banner_image_url} alt="Banner" className="w-full h-full object-cover" />
-               <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/40 to-transparent" />
+               <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-black/40 to-transparent pointer-events-none" />
              </div>
           )}
           {!card.banner_image_url && (
             <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${themeColor} 0%, transparent 100%)`, opacity: 0.2 }} />
           )}
+          <ImageEditOverlay field="banner_image_url" label="Edit Banner" />
         </motion.div>
 
         <motion.div
@@ -128,186 +234,372 @@ export default function CardClient({ card }: { card: any }) {
           className="relative z-20 -mt-16 space-y-6"
         >
           {/* Identity & Avatar */}
-          <motion.div variants={itemVariants} className="flex flex-col items-center text-center">
-            <div className="relative mb-5 group">
-               <div className="absolute -inset-1 rounded-full blur-md opacity-30 group-hover:opacity-50 transition duration-1000" style={{ backgroundColor: themeColor }} />
+          <motion.div variants={itemVariants} className="flex flex-col items-center text-center relative w-full">
+            
+            {/* Center Snap Line Visualization */}
+            {isEditable && isDraggingAvatar && Math.abs(avatarX) < 10 && (
+              <div className="absolute top-[-40px] bottom-0 left-1/2 w-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.8)] -translate-x-1/2 z-0 pointer-events-none rounded-full" />
+            )}
+
+            <motion.div 
+              className={`relative mb-5 group z-10 ${isEditable ? 'cursor-grab active:cursor-grabbing' : ''}`}
+              drag={isEditable ? "x" : false}
+              dragConstraints={{ left: -140, right: 140 }}
+              dragElastic={0.1}
+              dragSnapToOrigin={false}
+              dragMomentum={false}
+              onDragStart={() => setIsDraggingAvatar(true)}
+              onDrag={(e, info) => {
+                if (Math.abs(info.point.x) < 15) {
+                  // visually snap to center, logic handled by onDragEnd
+                }
+              }}
+              onDragEnd={(e, info) => {
+                setIsDraggingAvatar(false)
+                const finalX = info.offset.x + avatarX
+                if (Math.abs(finalX) < 25) {
+                  setAvatarX(0) // Snap to center
+                } else {
+                  setAvatarX(finalX)
+                }
+              }}
+              animate={{ x: avatarX }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+               <div className="absolute -inset-1 rounded-full blur-md opacity-30 group-hover:opacity-50 transition duration-1000 pointer-events-none" style={{ backgroundColor: themeColor }} />
                <div className="relative h-28 w-28 rounded-full shadow-2xl overflow-hidden bg-[#111] flex items-center justify-center ring-1 ring-white/10">
                  {card.profile_picture_url ? (
-                   <img src={card.profile_picture_url} alt={card.owner_name} className="w-full h-full object-cover" />
+                   <img src={card.profile_picture_url} alt={card.owner_name} className="w-full h-full object-cover pointer-events-none" />
                  ) : (
-                   <span className="text-3xl font-light text-white tracking-widest">
-                     {card.owner_name?.charAt(0).toUpperCase()}
+                   <span className="text-3xl font-light text-white tracking-widest pointer-events-none">
+                     {card.owner_name?.charAt(0)?.toUpperCase()}
                    </span>
                  )}
+                 <ImageEditOverlay field="profile_picture_url" rounded label="Edit Avatar" />
                </div>
-            </div>
+            </motion.div>
 
-            {card.company_name && (
-              <div className="flex flex-col items-center justify-center gap-1.5 mb-3 w-full">
-                {card.company_logo_url && (
-                  <img src={card.company_logo_url} alt={card.company_name} className="h-14 w-auto max-w-[200px] rounded-sm object-contain opacity-100" />
+            {/* Company Logo and Name */}
+            {(card.company_name || isEditable) && (
+              <div className="flex flex-col items-center justify-center gap-1.5 mb-3 w-full relative">
+                {(card.company_logo_url || isEditable) && (
+                  <div className="relative group inline-block">
+                    {card.company_logo_url ? (
+                      <img src={card.company_logo_url} alt={card.company_name} className="h-14 w-auto max-w-[200px] rounded-sm object-contain opacity-100" />
+                    ) : isEditable ? (
+                      <div className="h-14 w-14 rounded border border-dashed border-white/20 flex items-center justify-center text-white/30 text-[10px] uppercase font-bold tracking-widest cursor-pointer hover:border-white/50">
+                        Logo
+                      </div>
+                    ) : null}
+                    <ImageEditOverlay field="company_logo_url" label="Edit Logo" />
+                  </div>
                 )}
-                <span className="text-xs font-semibold text-white/80 uppercase tracking-[0.15em] text-center">
-                  {card.company_name}
-                </span>
+                
+                <InlineInput
+                  field="company_name"
+                  value={card.company_name}
+                  placeholder="COMPANY NAME"
+                  emptyStateText="+ ADD COMPANY"
+                  className="text-xs font-semibold text-white/80 uppercase tracking-[0.15em] text-center"
+                />
               </div>
             )}
             
-            <h1 className="text-[28px] font-medium text-white tracking-tight leading-none mb-2">
-              {card.owner_name}
-            </h1>
+            <InlineInput
+              field="owner_name"
+              value={card.owner_name}
+              placeholder="Your Name"
+              className="text-[28px] font-medium text-white tracking-tight leading-none mb-2"
+            />
             
-            {card.job_title && (
-              <p className="text-sm font-light text-white/60 tracking-wide">{card.job_title}</p>
+            {(card.job_title || isEditable) && (
+              <InlineInput
+                field="job_title"
+                value={card.job_title}
+                placeholder="Your Job Title"
+                emptyStateText="+ Add Job Title"
+                className="text-sm font-light text-white/60 tracking-wide"
+              />
             )}
           </motion.div>
 
           {/* Bio - Elegant editorial block */}
-          {card.bio && (
+          {(card.bio || isEditable) && (
             <motion.div variants={itemVariants} className="text-center px-4">
-              <p className="text-[13px] font-light text-white/70 leading-relaxed">
-                {card.bio}
-              </p>
+              <InlineInput
+                field="bio"
+                value={card.bio}
+                placeholder="Write a short bio about yourself or your company..."
+                emptyStateText="+ Add Biography"
+                className="text-[13px] font-light text-white/70 leading-relaxed"
+                multiline={true}
+              />
             </motion.div>
           )}
 
           {/* Primary Contact Actions */}
-          {contactItems.length > 0 && (
+          {activeContactItems.length > 0 && (
             <motion.div variants={itemVariants} className="space-y-2.5 pt-2">
-              {contactItems.map(({ href, icon: Icon, label, external }) => (
-                <a
-                  key={label}
-                  href={href}
-                  {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/5 border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all active:scale-[0.98] group backdrop-blur-xl"
-                >
+              {activeContactItems.map(({ key, icon: Icon, label }) => (
+                <div key={key} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/5 border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all group backdrop-blur-xl">
                   <div className="flex items-center justify-center w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" style={{ color: themeColor }}>
                     <Icon strokeWidth={1.5} className="w-5 h-5" />
                   </div>
-                  <span className="text-sm font-light text-white/90 truncate flex-1 tracking-wide">{label}</span>
-                  {external && <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />}
-                </a>
+                  {isEditable ? (
+                    <input
+                      type="text"
+                      value={card[key] || ''}
+                      onChange={(e) => handleTextChange(key, e.target.value)}
+                      placeholder={`Add ${key.replace('_', ' ')}`}
+                      className="bg-transparent outline-none flex-1 text-sm font-light text-white/90 placeholder:text-white/20 tracking-wide"
+                    />
+                  ) : (
+                    <>
+                      <span className="text-sm font-light text-white/90 truncate flex-1 tracking-wide">{label}</span>
+                      {key === 'website' || key === 'location' ? (
+                        <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
+                      ) : null}
+                    </>
+                  )}
+                </div>
               ))}
             </motion.div>
           )}
 
-          {/* Social Links - Clean Grid */}
-          {card.card_social_links?.length > 0 && (
-            <motion.div variants={itemVariants} className="pt-4">
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-4 text-center">
-                Connect
-              </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                {card.card_social_links.map((social: any, idx: number) => {
-                  const key = social.platform?.toLowerCase()
-                  const Icon = BrandIcons[key]
-                  return (
-                    <a
+          {/* Social Links & Custom Links */}
+          {(card.card_social_links?.length > 0 || card.card_custom_buttons?.length > 0 || isEditable) && (
+            <motion.div variants={itemVariants} className="pt-4 space-y-6">
+              
+              {/* Socials */}
+              {(card.card_social_links?.length > 0 || isEditable) && (
+                <div>
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Connect</p>
+                    {isEditable && (
+                      <button onClick={() => setShowLinksEditor(true)} className="text-[10px] bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 uppercase tracking-widest transition-colors font-bold flex items-center gap-1">
+                        <Settings2 className="w-3 h-3" /> Edit Links
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {card.card_social_links?.map((social: any, idx: number) => {
+                      const key = social.platform?.toLowerCase()
+                      const Icon = BrandIcons[key]
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/[0.08] group backdrop-blur-xl"
+                        >
+                          {Icon ? (
+                            <Icon className="w-5 h-5 text-white/60" />
+                          ) : (
+                            <ArrowUpRight className="w-5 h-5 text-white/60" />
+                          )}
+                        </div>
+                      )
+                    })}
+                    {card.card_social_links?.length === 0 && isEditable && (
+                      <div className="text-xs text-white/30 italic">No social links added yet</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Custom Buttons */}
+              {(card.card_custom_buttons?.length > 0 || isEditable) && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Links</p>
+                    {isEditable && (
+                      <button onClick={() => setShowLinksEditor(true)} className="text-[10px] bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 uppercase tracking-widest transition-colors font-bold flex items-center gap-1">
+                        <Settings2 className="w-3 h-3" /> Edit Links
+                      </button>
+                    )}
+                  </div>
+                  {card.card_custom_buttons?.map((btn: any, idx: number) => (
+                    <div
                       key={idx}
-                      href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center w-12 h-12 rounded-full bg-white/5 border border-white/[0.08] hover:bg-white/[0.12] transition-all active:scale-[0.95] group backdrop-blur-xl"
+                      className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08]"
                     >
-                      {Icon ? (
-                        <Icon className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                      ) : (
-                        <ArrowUpRight className="w-5 h-5 text-white/60 group-hover:text-white transition-colors" />
-                      )}
-                    </a>
-                  )
-                })}
-              </div>
-            </motion.div>
-          )}
+                      <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
+                      <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30" />
+                    </div>
+                  ))}
+                  {card.card_custom_buttons?.length === 0 && isEditable && (
+                    <div className="text-xs text-white/30 italic text-center">No custom links added yet</div>
+                  )}
+                </div>
+              )}
 
-          {/* Custom Links */}
-          {card.card_custom_buttons?.length > 0 && (
-            <motion.div variants={itemVariants} className="space-y-2.5 pt-4">
-              <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em] mb-4 text-center">
-                Links
-              </p>
-              {card.card_custom_buttons.map((btn: any, idx: number) => (
-                <a
-                  key={idx}
-                  href={btn.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08] hover:border-white/[0.15] hover:from-white/[0.08] transition-all active:scale-[0.98] group"
-                >
-                  <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
-                  <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
-                </a>
-              ))}
             </motion.div>
           )}
 
           {/* Tagline & Footer */}
-          {card.company_tagline && (
+          {(card.company_tagline || isEditable) && (
             <motion.div variants={itemVariants} className="pt-6 pb-2 text-center">
-              <p className="text-base italic font-medium tracking-wide text-white/90 drop-shadow-md">
-                "{card.company_tagline}"
-              </p>
+              <InlineInput
+                field="company_tagline"
+                value={card.company_tagline}
+                placeholder="A memorable tagline..."
+                emptyStateText="+ Add Tagline"
+                className="text-base italic font-medium tracking-wide text-white/90 drop-shadow-md"
+              />
             </motion.div>
           )}
 
-          <motion.div variants={itemVariants} className="text-center pt-8 pb-10">
-            <a href={`/card/${card.slug}/edit/login`} className="text-[9px] text-white/20 hover:text-white/50 transition-colors tracking-[0.2em] uppercase font-bold">
-              Owner Access
-            </a>
+          {!isEditable && (
+            <motion.div variants={itemVariants} className="text-center pt-8 pb-10">
+              <a href={`/card/${card.slug}/edit/login`} className="text-[9px] text-white/20 hover:text-white/50 transition-colors tracking-[0.2em] uppercase font-bold">
+                Owner Access
+              </a>
+            </motion.div>
+          )}
+          {isEditable && <div className="pb-24" />}
+        </motion.div>
+
+        {/* Public Floating Action Bar - Save Contact */}
+        {!isEditable && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 1, duration: 1, ease: cinematicEase }}
+            className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-10 z-50 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
+          >
+            <div className="max-w-[480px] mx-auto flex gap-3 pointer-events-auto">
+              {/* ... Save Contact Button logic ... */}
+              <button
+                onClick={() => {
+                  let vCardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${card.owner_name}\nN:${card.owner_name};;;;\n`
+                  if (card.company_name) vCardData += `ORG:${card.company_name}\n`
+                  if (card.job_title) vCardData += `TITLE:${card.job_title}\n`
+                  if (card.phone_number) vCardData += `TEL;TYPE=CELL:${card.phone_number}\n`
+                  if (card.email) vCardData += `EMAIL;TYPE=WORK:${card.email}\n`
+                  if (card.website) vCardData += `URL:${card.website}\n`
+                  vCardData += `END:VCARD`
+
+                  const blob = new Blob([vCardData], { type: "text/vcard" })
+                  const url = URL.createObjectURL(blob)
+                  const link = document.createElement("a")
+                  link.href = url
+                  link.download = `${card.owner_name?.replace(/\s+/g, '_')}_Contact.vcf`
+                  document.body.appendChild(link)
+                  link.click()
+                  document.body.removeChild(link)
+                  URL.revokeObjectURL(url)
+                }}
+                className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
+                style={{ backgroundColor: '#ffffff', color: '#000000' }}
+              >
+                <Download className="w-4 h-4" strokeWidth={2.5} />
+                Save Contact
+              </button>
+              <button
+                className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all active:scale-[0.97] backdrop-blur-md"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: card.owner_name, url: window.location.href })
+                  } else {
+                    navigator.clipboard?.writeText(window.location.href)
+                  }
+                }}
+              >
+                <Share2 className="w-4 h-4" strokeWidth={2} />
+              </button>
+            </div>
           </motion.div>
-        </motion.div>
+        )}
 
-        {/* Floating Action Bar - Ultra Premium */}
-        <motion.div
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1, duration: 1, ease: cinematicEase }}
-          className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-10 z-50 pointer-events-none"
-          style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
-        >
-          <div className="max-w-[480px] mx-auto flex gap-3 pointer-events-auto">
-            <button
-              onClick={() => {
-                let vCardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${card.owner_name}\nN:${card.owner_name};;;;\n`
-                if (card.company_name) vCardData += `ORG:${card.company_name}\n`
-                if (card.job_title) vCardData += `TITLE:${card.job_title}\n`
-                if (card.phone_number) vCardData += `TEL;TYPE=CELL:${card.phone_number}\n`
-                if (card.email) vCardData += `EMAIL;TYPE=WORK:${card.email}\n`
-                if (card.website) vCardData += `URL:${card.website}\n`
-                vCardData += `END:VCARD`
-
-                const blob = new Blob([vCardData], { type: "text/vcard" })
-                const url = URL.createObjectURL(blob)
-                const link = document.createElement("a")
-                link.href = url
-                link.download = `${card.owner_name.replace(/\s+/g, '_')}_Contact.vcf`
-                document.body.appendChild(link)
-                link.click()
-                document.body.removeChild(link)
-                URL.revokeObjectURL(url)
-              }}
-              className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
-              style={{ backgroundColor: '#ffffff', color: '#000000' }}
-            >
-              <Download className="w-4 h-4" strokeWidth={2.5} />
-              Save Contact
-            </button>
-            <button
-              className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all active:scale-[0.97] backdrop-blur-md"
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({ title: card.owner_name, url: window.location.href })
-                } else {
-                  navigator.clipboard?.writeText(window.location.href)
-                }
-              }}
-            >
-              <Share2 className="w-4 h-4" strokeWidth={2} />
-            </button>
-          </div>
-        </motion.div>
+        {/* Edit Mode Floating Action Bar - Save & Publish */}
+        {isEditable && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="fixed bottom-0 left-0 right-0 px-5 pb-8 pt-10 z-[60]"
+            style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
+          >
+            <div className="max-w-[480px] mx-auto flex gap-3">
+               <button
+                 onClick={() => setShowColorPicker(!showColorPicker)}
+                 className="flex flex-col items-center justify-center w-14 h-14 rounded-2xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all active:scale-[0.97] backdrop-blur-md relative"
+                 title="Change Theme Color"
+               >
+                 <div className="w-5 h-5 rounded-full shadow-inner ring-1 ring-white/50" style={{ backgroundColor: themeColor }} />
+                 {showColorPicker && (
+                   <div className="absolute bottom-16 right-0 bg-zinc-900 border border-white/10 p-3 rounded-2xl shadow-2xl flex flex-wrap gap-2 w-48 justify-center">
+                     {['#0a0a0a', '#ffffff', '#d4af37', '#ff3366', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'].map(color => (
+                       <div 
+                         key={color} 
+                         onClick={(e) => { e.stopPropagation(); handleTextChange('theme_color', color); setShowColorPicker(false); }}
+                         className="w-8 h-8 rounded-full cursor-pointer ring-1 ring-white/20 hover:scale-110 transition-transform" 
+                         style={{ backgroundColor: color }} 
+                       />
+                     ))}
+                   </div>
+                 )}
+               </button>
+              <button
+                onClick={handleSaveAndPublish}
+                disabled={isSaving}
+                className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)] disabled:opacity-50 disabled:pointer-events-none"
+                style={{ backgroundColor: '#ffffff', color: '#000000' }}
+              >
+                {isSaving ? (
+                   <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" strokeWidth={2.5} />
+                )}
+                {isSaving ? 'Publishing...' : 'Save & Publish'}
+              </button>
+            </div>
+          </motion.div>
+        )}
       </div>
+
+      {/* Modals */}
+      {isEditable && activeUploader && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative">
+            <button onClick={() => setActiveUploader(null)} className="absolute top-4 right-4 text-zinc-400 hover:text-black transition-colors">
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <h2 className="text-black font-bold mb-4 text-lg">Update Picture</h2>
+            <ImageUploader
+              name={activeUploader}
+              label=""
+              defaultValue={card[activeUploader] || ''}
+              aspectRatio={activeUploader === 'banner_image_url' ? 'video' : 'square'}
+              onUploadSuccess={(url) => {
+                handleTextChange(activeUploader, url)
+                setActiveUploader(null)
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {isEditable && showLinksEditor && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-zinc-950 border border-white/10 rounded-3xl p-6 w-full max-w-md shadow-2xl relative my-8">
+            <button onClick={() => setShowLinksEditor(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors bg-white/5 rounded-full p-1.5">
+              <Check className="w-5 h-5" />
+            </button>
+            <h2 className="text-white font-bold mb-6 text-xl tracking-tight">Manage Links</h2>
+            <SocialLinksEditor 
+              initialLinks={card.card_social_links || []} 
+              initialCustomButtons={card.card_custom_buttons || []}
+              onLinksChange={(socials: any) => handleTextChange('card_social_links', socials)}
+              onCustomButtonsChange={(customs: any) => handleTextChange('card_custom_buttons', customs)}
+            />
+            <div className="mt-8">
+               <button onClick={() => setShowLinksEditor(false)} className="w-full h-12 rounded-xl bg-white text-black font-semibold tracking-wide hover:bg-zinc-200 transition-colors">
+                 Done
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
