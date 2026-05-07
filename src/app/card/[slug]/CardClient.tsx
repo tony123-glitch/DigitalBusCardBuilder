@@ -340,29 +340,51 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
           {/* Primary Contact Actions */}
           {activeContactItems.length > 0 && (
             <motion.div variants={itemVariants} className="space-y-2.5 pt-2">
-              {activeContactItems.map(({ key, icon: Icon, label }) => (
-                <div key={key} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/5 border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all group backdrop-blur-xl">
-                  <div className="flex items-center justify-center w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" style={{ color: themeColor }}>
-                    <Icon strokeWidth={1.5} className="w-5 h-5" />
-                  </div>
-                  {isEditable ? (
-                    <input
-                      type="text"
-                      value={card[key] || ''}
-                      onChange={(e) => handleTextChange(key, e.target.value)}
-                      placeholder={`Add ${key.replace('_', ' ')}`}
-                      className="bg-transparent outline-none flex-1 text-sm font-light text-white/90 placeholder:text-white/20 tracking-wide"
-                    />
-                  ) : (
-                    <>
-                      <span className="text-sm font-light text-white/90 truncate flex-1 tracking-wide">{label}</span>
-                      {key === 'website' || key === 'location' ? (
+              {activeContactItems.map(({ key, icon: Icon, label, raw }) => {
+                // Determine href for each contact type
+                const getHref = () => {
+                  if (isEditable) return undefined
+                  if (key === 'phone_number') return `/api/vcard/${card.id}`
+                  if (key === 'email') return `mailto:${raw}`
+                  if (key === 'website') return raw?.startsWith('http') ? raw : `https://${raw}`
+                  if (key === 'location') return `https://maps.google.com/?q=${encodeURIComponent(raw || '')}`
+                  return undefined
+                }
+                const href = getHref()
+
+                const inner = (
+                  <div className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/5 border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all group backdrop-blur-xl">
+                    <div className="flex items-center justify-center w-5 h-5 opacity-70 group-hover:opacity-100 transition-opacity" style={{ color: themeColor }}>
+                      <Icon strokeWidth={1.5} className="w-5 h-5" />
+                    </div>
+                    {isEditable ? (
+                      <input
+                        type="text"
+                        value={card[key] || ''}
+                        onChange={(e) => handleTextChange(key, e.target.value)}
+                        placeholder={`Add ${key.replace('_', ' ')}`}
+                        className="bg-transparent outline-none flex-1 text-sm font-light text-white/90 placeholder:text-white/20 tracking-wide"
+                      />
+                    ) : (
+                      <>
+                        <span className="text-sm font-light text-white/90 truncate flex-1 tracking-wide">{label}</span>
                         <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
-                      ) : null}
-                    </>
-                  )}
-                </div>
-              ))}
+                      </>
+                    )}
+                  </div>
+                )
+
+                if (href && !isEditable) {
+                  const isExternal = key === 'website' || key === 'location'
+                  return (
+                    <a key={key} href={href} target={isExternal ? '_blank' : '_self'} rel={isExternal ? 'noopener noreferrer' : undefined}>
+                      {inner}
+                    </a>
+                  )
+                }
+
+                return <div key={key}>{inner}</div>
+              })}
             </motion.div>
           )}
 

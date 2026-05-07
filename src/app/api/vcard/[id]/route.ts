@@ -43,8 +43,9 @@ export async function GET(request: Request, context: any) {
 
     return new NextResponse(vCardData, {
       headers: {
-        'Content-Type': 'text/vcard; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
+        // text/x-vcard + no Content-Disposition forces iOS Safari to open
+        // the native "Add to Contacts" screen instead of downloading a file.
+        'Content-Type': 'text/x-vcard; charset=utf-8',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     })
