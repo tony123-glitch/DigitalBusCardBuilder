@@ -2,9 +2,10 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { Phone, Mail, Globe, MapPin, Download, Share2, ExternalLink, ArrowUpRight, Camera as CameraIcon, Check, Settings2, Plus, GripVertical, Trash2 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { ImageUploader } from '@/components/ImageUploader'
 import SocialLinksEditor from '@/components/SocialLinksEditor'
+import GallerySlideshow from '@/components/GallerySlideshow'
 import { saveCustomerCard } from '@/app/actions/customer'
 
 // Real SVG brand icons - monochrome elite style
@@ -499,54 +500,24 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
             </motion.div>
           )}
 
-          {/* Extra Images Gallery */}
+          {/* Gallery Slideshow */}
           {(() => {
             const extraImages: string[] = (card.card_social_links || [])
               .filter((s: any) => s.platform === '_extra_image')
               .map((s: any) => s.url)
             if (!isEditable && extraImages.length === 0) return null
-            return (
-              <motion.div variants={itemVariants} className="pt-4 space-y-3">
-                <div className="flex items-center justify-center gap-2">
-                  <p className="text-xs font-bold text-white uppercase tracking-[0.2em]">Gallery</p>
-                  {isEditable && (
-                    <button
-                      onClick={() => setShowImageGalleryUploader(true)}
-                      className="text-[10px] bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 uppercase tracking-widest transition-colors font-bold flex items-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" /> Add Image
-                    </button>
-                  )}
-                </div>
-                {extraImages.length > 0 && (
-                  <div className="space-y-3">
-                    {extraImages.map((url, idx) => (
-                      <div key={idx} className="relative group rounded-2xl overflow-hidden">
-                        <img src={url} alt={`Gallery ${idx + 1}`} className="w-full object-cover rounded-2xl max-h-64" />
-                        {isEditable && (
-                          <button
-                            onClick={() => {
-                              const newSocials = (card.card_social_links || []).filter(
-                                (s: any) => !(s.platform === '_extra_image' && s.url === url)
-                              )
-                              handleTextChange('card_social_links', newSocials as any)
-                            }}
-                            className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {extraImages.length === 0 && isEditable && (
-                  <div className="text-center py-6 border border-dashed border-white/10 rounded-2xl">
-                    <p className="text-xs text-white/30">No gallery images added yet</p>
-                  </div>
-                )}
-              </motion.div>
-            )
+            return <GallerySlideshow
+              images={extraImages}
+              isEditable={isEditable}
+              themeColor={themeColor}
+              onAddImage={() => setShowImageGalleryUploader(true)}
+              onRemoveImage={(url) => {
+                const newSocials = (card.card_social_links || []).filter(
+                  (s: any) => !(s.platform === '_extra_image' && s.url === url)
+                )
+                handleTextChange('card_social_links', newSocials as any)
+              }}
+            />
           })()}
 
           {!isEditable && (
