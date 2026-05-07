@@ -48,8 +48,10 @@ export async function saveCustomerCard(formData: FormData) {
     website: formData.get('website') as string,
     location: formData.get('location') as string,
     theme_color: formData.get('theme_color') as string,
-    // Note: image URLs are updated directly via the uploadImage action, so we don't necessarily need to overwrite them here 
-    // unless they changed without an upload (e.g. removal).
+    // Image URLs — may have been updated inline by the owner
+    profile_picture_url: (formData.get('profile_picture_url') as string) || undefined,
+    banner_image_url: (formData.get('banner_image_url') as string) || undefined,
+    company_logo_url: (formData.get('company_logo_url') as string) || undefined,
   }
 
   // Parse JSON fields safely
@@ -68,9 +70,8 @@ export async function saveCustomerCard(formData: FormData) {
     } catch (e) {}
   }
 
-  // Ensure arrays are null if empty so DB accepts them properly (if using jsonb)
-  if ((updates as any).card_social_links?.length === 0) (updates as any).card_social_links = null
-  if ((updates as any).card_custom_buttons?.length === 0) (updates as any).card_custom_buttons = null
+  // Do NOT null out empty arrays — let the user explicitly save empty lists
+  // (Previously these lines were zeroing out newly-emptied arrays, which blocked saves)
 
   const { error: updateError } = await adminClient
     .from('cards')
