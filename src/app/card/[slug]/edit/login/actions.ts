@@ -35,21 +35,21 @@ export async function customerLogin(slug: string, formData: FormData) {
     return { error: 'Invalid password' }
   }
 
-  // Generate a JWT for this card
-  const token = await new SignJWT({ card_id: card.id })
+  // Generate a JWT for this card — include slug so the edit page can verify it
+  const token = await new SignJWT({ card_id: card.id, slug })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('24h') // Valid for 24 hours
+    .setExpirationTime('30d') // Valid for 30 days so mobile users don't get kicked out
     .sign(SECRET)
 
-  // Set HTTP-only cookie
+  // Set HTTP-only cookie — must match the name the edit page reads: card_edit_{slug}
   const cookieStore = await cookies()
-  cookieStore.set(`card_auth_${slug}`, token, {
+  cookieStore.set(`card_edit_${slug}`, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24, // 24 hours
+    maxAge: 60 * 60 * 24 * 30, // 30 days
   })
 
   redirect(`/card/${slug}/edit`)
