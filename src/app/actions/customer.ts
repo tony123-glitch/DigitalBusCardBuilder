@@ -70,15 +70,21 @@ export async function saveCustomerCard(formData: FormData) {
     } catch (e) {}
   }
 
-  // Do NOT null out empty arrays — let the user explicitly save empty lists
-  // (Previously these lines were zeroing out newly-emptied arrays, which blocked saves)
+  // Strip undefined values — Supabase will reject or null-out fields set to undefined
+  const cleanUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+  )
+  // Always include JSON fields even if empty arrays
+  if (socialLinksStr) (cleanUpdates as any).card_social_links = (updates as any).card_social_links
+  if (customBtnsStr) (cleanUpdates as any).card_custom_buttons = (updates as any).card_custom_buttons
 
   const { error: updateError } = await adminClient
     .from('cards')
-    .update(updates)
+    .update(cleanUpdates)
     .eq('id', existingCard.id)
 
   if (updateError) {
+    console.error('[saveCustomerCard] Supabase error:', updateError)
     return { error: updateError.message }
   }
 

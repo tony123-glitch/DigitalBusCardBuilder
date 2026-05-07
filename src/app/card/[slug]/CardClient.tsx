@@ -241,9 +241,8 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
           {/* Identity & Avatar */}
           <motion.div variants={itemVariants} className="flex flex-col items-center text-center relative w-full">
             
-            {/* Center Snap Line Visualization */}
-            {isEditable && isDraggingAvatar && Math.abs(avatarX) < 10 && (
-              <div className="absolute top-[-40px] bottom-0 left-1/2 w-[2px] bg-white/40 shadow-[0_0_10px_rgba(255,255,255,0.8)] -translate-x-1/2 z-0 pointer-events-none rounded-full" />
+            {isEditable && isDraggingAvatar && (
+              <div className={`absolute top-[-40px] bottom-0 left-1/2 w-[2px] -translate-x-1/2 z-0 pointer-events-none rounded-full transition-opacity duration-150 ${Math.abs(avatarX) < 60 ? 'bg-white/70 shadow-[0_0_12px_rgba(255,255,255,0.9)] opacity-100' : 'opacity-0'}`} />
             )}
 
             <motion.div 
@@ -261,12 +260,15 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
               }}
               onDragEnd={(e, info) => {
                 setIsDraggingAvatar(false)
-                const finalX = info.offset.x + avatarX
-                if (Math.abs(finalX) < 25) {
-                  setAvatarX(0) // Snap to center
-                } else {
-                  setAvatarX(finalX)
-                }
+                // Snap to one of 3 positions: left(-120), center(0), right(120)
+                const SNAP_POSITIONS = [-120, 0, 120]
+                const rawX = info.offset.x + avatarX
+                // Find closest snap position, but heavily bias toward center
+                const centerBias = Math.abs(rawX) < 60 ? 0 : rawX
+                const closest = SNAP_POSITIONS.reduce((prev, curr) =>
+                  Math.abs(curr - centerBias) < Math.abs(prev - centerBias) ? curr : prev
+                )
+                setAvatarX(closest)
               }}
               animate={{ x: avatarX }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
