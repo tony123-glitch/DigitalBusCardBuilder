@@ -478,15 +478,22 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
                   if (card.website) vCardData += `URL:${card.website}\n`
                   vCardData += `END:VCARD`
 
-                  const blob = new Blob([vCardData], { type: "text/vcard" })
-                  const url = URL.createObjectURL(blob)
-                  const link = document.createElement("a")
-                  link.href = url
-                  link.download = `${card.owner_name?.replace(/\s+/g, '_')}_Contact.vcf`
-                  document.body.appendChild(link)
-                  link.click()
-                  document.body.removeChild(link)
-                  URL.revokeObjectURL(url)
+                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+                  
+                  if (isIOS) {
+                    const dataUri = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vCardData)
+                    window.location.assign(dataUri)
+                  } else {
+                    const blob = new Blob([vCardData], { type: "text/vcard" })
+                    const url = URL.createObjectURL(blob)
+                    const link = document.createElement("a")
+                    link.href = url
+                    link.download = `${card.owner_name?.replace(/\s+/g, '_')}_Contact.vcf`
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                    URL.revokeObjectURL(url)
+                  }
                 }}
                 className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
                 style={{ backgroundColor: '#ffffff', color: '#000000' }}
