@@ -93,18 +93,18 @@ export default function SocialLinksEditor({
         {links.length > 0 && (
           <div className="space-y-3">
             {links.map((link, index) => (
-              <div key={index} className="flex items-start gap-2 p-3 bg-white/5 rounded-xl border border-white/10">
+              <div key={index} className="flex items-start gap-2 p-3 bg-zinc-900 rounded-xl border border-zinc-800">
                 <div className="w-[130px] shrink-0">
                   <Select
                     value={link.platform}
                     onValueChange={(val) => updateLink(index, 'platform', val)}
                   >
-                    <SelectTrigger className="bg-black/20 border-white/10 text-white h-9">
+                    <SelectTrigger className="bg-zinc-950 border-zinc-800 text-zinc-100 h-9">
                       <SelectValue placeholder="Platform" />
                     </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-white/10 text-white">
+                    <SelectContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
                       {AVAILABLE_PLATFORMS.map((p) => (
-                        <SelectItem key={p.id} value={p.id} className="focus:bg-white/10 focus:text-white">
+                        <SelectItem key={p.id} value={p.id} className="focus:bg-zinc-800 focus:text-zinc-100">
                           <div className="flex items-center gap-2">
                             <p.icon className="h-4 w-4 opacity-70" />
                             <span>{p.label}</span>
@@ -120,7 +120,7 @@ export default function SocialLinksEditor({
                     value={link.url}
                     onChange={(e) => updateLink(index, 'url', e.target.value)}
                     placeholder="https://..."
-                    className="bg-black/20 border-white/10 text-white placeholder:text-white/30 h-9"
+                    className="bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-9"
                     required
                   />
                 </div>
@@ -130,7 +130,7 @@ export default function SocialLinksEditor({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeLink(index)}
-                  className="text-white/40 hover:text-red-400 hover:bg-red-500/10 shrink-0 h-9 w-9"
+                  className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 shrink-0 h-9 w-9"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -140,42 +140,42 @@ export default function SocialLinksEditor({
         )}
 
         {links.length === 0 && (
-          <div className="text-center p-4 border border-dashed border-white/10 rounded-xl bg-white/5">
-            <p className="text-xs text-white/40">No social media links added yet.</p>
+          <div className="text-center p-4 border border-dashed border-zinc-800 rounded-xl bg-zinc-900">
+            <p className="text-xs text-zinc-500">No social media links added yet.</p>
           </div>
         )}
 
         <Button
           type="button"
           onClick={addLink}
-          className="w-full bg-white/10 hover:bg-white/20 text-white border-none h-9 text-xs"
+          className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-none h-9 text-xs"
         >
           <Plus className="mr-2 h-3.5 w-3.5" /> Add Social Icon
         </Button>
       </div>
 
-      <div className="h-px bg-white/10" />
+      <div className="h-px bg-zinc-800" />
 
       {/* Custom Buttons Section */}
       <div className="space-y-4">
-        <h3 className="text-sm font-semibold text-white/90">Custom Links</h3>
+        <h3 className="text-sm font-semibold text-zinc-100">Custom Links</h3>
         {customButtons.length > 0 && (
           <div className="space-y-3">
             {customButtons.map((btn, index) => (
-              <div key={index} className="flex items-start gap-2 p-3 bg-white/5 rounded-xl border border-white/10">
+              <div key={index} className="flex items-start gap-2 p-3 bg-zinc-900 rounded-xl border border-zinc-800">
                 <div className="flex-1 space-y-2">
                   <Input
                     value={btn.label}
                     onChange={(e) => updateCustomButton(index, 'label', e.target.value)}
                     placeholder="Button Label (e.g. Visit my Website)"
-                    className="bg-black/20 border-white/10 text-white placeholder:text-white/30 h-9"
+                    className="bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-9"
                     required
                   />
                   <Input
                     value={btn.url}
                     onChange={(e) => updateCustomButton(index, 'url', e.target.value)}
                     placeholder="https://..."
-                    className="bg-black/20 border-white/10 text-white placeholder:text-white/30 h-9"
+                    className="bg-zinc-950 border-zinc-800 text-zinc-100 placeholder:text-zinc-500 h-9"
                     required
                   />
                 </div>
@@ -185,7 +185,7 @@ export default function SocialLinksEditor({
                   variant="ghost"
                   size="icon"
                   onClick={() => removeCustomButton(index)}
-                  className="text-white/40 hover:text-red-400 hover:bg-red-500/10 shrink-0 h-9 w-9 mt-1"
+                  className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 shrink-0 h-9 w-9 mt-1"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -195,15 +195,15 @@ export default function SocialLinksEditor({
         )}
 
         {customButtons.length === 0 && (
-          <div className="text-center p-4 border border-dashed border-white/10 rounded-xl bg-white/5">
-            <p className="text-xs text-white/40">No custom links added yet.</p>
+          <div className="text-center p-4 border border-dashed border-zinc-800 rounded-xl bg-zinc-900">
+            <p className="text-xs text-zinc-500">No custom links added yet.</p>
           </div>
         )}
 
         <Button
           type="button"
           onClick={addCustomButton}
-          className="w-full bg-white/10 hover:bg-white/20 text-white border-none h-9 text-xs"
+          className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-100 border-none h-9 text-xs"
         >
           <Plus className="mr-2 h-3.5 w-3.5" /> Add Custom Link
         </Button>
