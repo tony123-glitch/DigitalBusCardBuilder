@@ -344,7 +344,7 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
                 // Determine href for each contact type
                 const getHref = () => {
                   if (isEditable) return undefined
-                  if (key === 'phone_number') return `/api/vcard/${card.id}`
+                  if (key === 'phone_number') return `/api/vcard/${card.id}/contact.vcf`
                   if (key === 'email') return `mailto:${raw}`
                   if (key === 'website') return raw?.startsWith('http') ? raw : `https://${raw}`
                   if (key === 'location') return `https://maps.google.com/?q=${encodeURIComponent(raw || '')}`
@@ -490,7 +490,7 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
           >
             <div className="max-w-[480px] mx-auto flex gap-3 pointer-events-auto">
               <a
-                href={`/api/vcard/${card.id}`}
+                href={`/api/vcard/${card.id}/contact.vcf`}
                 className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
                 style={{ backgroundColor: '#ffffff', color: '#000000' }}
               >
