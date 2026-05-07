@@ -467,56 +467,14 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
             style={{ background: 'linear-gradient(to top, rgba(5,5,5,1) 20%, rgba(5,5,5,0.8) 60%, transparent)' }}
           >
             <div className="max-w-[480px] mx-auto flex gap-3 pointer-events-auto">
-              {/* ... Save Contact Button logic ... */}
-              <button
-                onClick={() => {
-                  let vCardData = `BEGIN:VCARD\nVERSION:3.0\nFN:${card.owner_name}\nN:${card.owner_name};;;;\n`
-                  if (card.company_name) vCardData += `ORG:${card.company_name}\n`
-                  if (card.job_title) vCardData += `TITLE:${card.job_title}\n`
-                  if (card.phone_number) vCardData += `TEL;TYPE=CELL:${card.phone_number}\n`
-                  if (card.email) vCardData += `EMAIL;TYPE=WORK:${card.email}\n`
-                  if (card.website) vCardData += `URL:${card.website}\n`
-                  vCardData += `END:VCARD`
-
-                  const fileName = `${card.owner_name?.replace(/\s+/g, '_')}_Contact.vcf`
-                  const file = new File([vCardData], fileName, { type: 'text/vcard' })
-
-                  // 1. Try Web Share API (Best for iOS 15+)
-                  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    navigator.share({
-                      files: [file],
-                      title: 'Save Contact',
-                    }).catch(() => {
-                      // Silently fail if user cancels share sheet
-                    })
-                    return
-                  }
-
-                  // 2. Fallback for iOS without Share API
-                  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-                  if (isIOS) {
-                    const base64Vcard = btoa(unescape(encodeURIComponent(vCardData)))
-                    window.location.assign(`data:text/vcard;base64,${base64Vcard}`)
-                    return
-                  }
-
-                  // 3. Fallback for Desktop/Android
-                  const blob = new Blob([vCardData], { type: "text/vcard" })
-                  const url = URL.createObjectURL(blob)
-                  const link = document.createElement("a")
-                  link.href = url
-                  link.download = fileName
-                  document.body.appendChild(link)
-                  link.click()
-                  document.body.removeChild(link)
-                  URL.revokeObjectURL(url)
-                }}
+              <a
+                href={`/api/vcard/${card.id}`}
                 className="flex-1 flex items-center justify-center gap-2.5 h-14 rounded-2xl font-semibold text-[13px] tracking-wide transition-all active:scale-[0.97] shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_50px_rgba(255,255,255,0.15)]"
                 style={{ backgroundColor: '#ffffff', color: '#000000' }}
               >
                 <Download className="w-4 h-4" strokeWidth={2.5} />
                 Save Contact
-              </button>
+              </a>
               <button
                 className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all active:scale-[0.97] backdrop-blur-md"
                 onClick={() => {
