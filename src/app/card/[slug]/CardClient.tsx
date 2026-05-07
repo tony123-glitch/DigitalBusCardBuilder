@@ -397,7 +397,7 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
               {(card.card_social_links?.length > 0 || isEditable) && (
                 <div>
                   <div className="flex items-center justify-center gap-2 mb-4">
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Connect</p>
+                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em]">Connect</p>
                     {isEditable && (
                       <button onClick={() => setShowLinksEditor(true)} className="text-[10px] bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 uppercase tracking-widest transition-colors font-bold flex items-center gap-1">
                         <Settings2 className="w-3 h-3" /> Edit Links
@@ -432,7 +432,7 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
               {(card.card_custom_buttons?.length > 0 || isEditable) && (
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-center gap-2 mb-4">
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Links & Numbers</p>
+                    <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em]">Links & Numbers</p>
                     {isEditable && (
                       <button onClick={() => setShowLinksEditor(true)} className="text-[10px] bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 uppercase tracking-widest transition-colors font-bold flex items-center gap-1">
                         <Settings2 className="w-3 h-3" /> Edit
@@ -502,7 +502,7 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
             return (
               <motion.div variants={itemVariants} className="pt-4 space-y-3">
                 <div className="flex items-center justify-center gap-2">
-                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Gallery</p>
+                  <p className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em]">Gallery</p>
                   {isEditable && (
                     <button
                       onClick={() => setShowImageGalleryUploader(true)}
