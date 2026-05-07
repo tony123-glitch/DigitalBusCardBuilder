@@ -83,6 +83,7 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
   const [activeUploader, setActiveUploader] = useState<'profile_picture_url' | 'banner_image_url' | 'company_logo_url' | null>(null)
   const [showLinksEditor, setShowLinksEditor] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [showImageGalleryUploader, setShowImageGalleryUploader] = useState(false)
   
   const themeColor = card.theme_color || '#d4af37' 
 
@@ -444,38 +445,30 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
                       ? `tel:${btn.url?.replace(/\s/g, '')}`
                       : (btn.url?.startsWith('http') ? btn.url : `https://${btn.url}`)
 
-                    return isEditable ? (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08]"
-                      >
+                    const row = (
+                      <div className="flex items-center justify-between px-5 py-4 rounded-2xl bg-white/[0.07] border border-white/[0.12] hover:bg-white/[0.12] hover:border-white/[0.2] transition-all group">
                         <div className="flex items-center gap-3">
                           {isPhone
-                            ? <Phone strokeWidth={1.5} className="w-4 h-4 text-white/40" />
-                            : <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/40" />
+                            ? <Phone strokeWidth={1.5} className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+                            : <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
                           }
-                          <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
+                          <span className="text-sm font-semibold text-white tracking-wide">{btn.label}</span>
                         </div>
-                        <span className={`text-[10px] uppercase tracking-widest font-bold ${isPhone ? 'text-green-400/60' : 'text-blue-400/60'}`}>
-                          {isPhone ? 'Phone' : 'Link'}
-                        </span>
+                        {isEditable ? (
+                          <span className={`text-[10px] uppercase tracking-widest font-bold ${isPhone ? 'text-green-400/70' : 'text-blue-400/70'}`}>
+                            {isPhone ? 'Phone' : 'Link'}
+                          </span>
+                        ) : (
+                          <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-colors" />
+                        )}
                       </div>
+                    )
+
+                    return isEditable ? (
+                      <div key={idx}>{row}</div>
                     ) : (
-                      <a
-                        key={idx}
-                        href={href}
-                        target={isPhone ? '_self' : '_blank'}
-                        rel={isPhone ? undefined : 'noopener noreferrer'}
-                        className="flex items-center justify-between px-5 py-4 rounded-2xl bg-gradient-to-r from-white/5 to-transparent border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] transition-all group"
-                      >
-                        <div className="flex items-center gap-3">
-                          {isPhone
-                            ? <Phone strokeWidth={1.5} className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
-                            : <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/40 group-hover:text-white/70 transition-colors" />
-                          }
-                          <span className="text-sm font-medium text-white/90 tracking-wide">{btn.label}</span>
-                        </div>
-                        <ArrowUpRight strokeWidth={1.5} className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
+                      <a key={idx} href={href} target={isPhone ? '_self' : '_blank'} rel={isPhone ? undefined : 'noopener noreferrer'}>
+                        {row}
                       </a>
                     )
                   })}
@@ -484,8 +477,6 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
                   )}
                 </div>
               )}
-
-
             </motion.div>
           )}
 
@@ -501,6 +492,56 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
               />
             </motion.div>
           )}
+
+          {/* Extra Images Gallery */}
+          {(() => {
+            const extraImages: string[] = (card.card_social_links || [])
+              .filter((s: any) => s.platform === '_extra_image')
+              .map((s: any) => s.url)
+            if (!isEditable && extraImages.length === 0) return null
+            return (
+              <motion.div variants={itemVariants} className="pt-4 space-y-3">
+                <div className="flex items-center justify-center gap-2">
+                  <p className="text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">Gallery</p>
+                  {isEditable && (
+                    <button
+                      onClick={() => setShowImageGalleryUploader(true)}
+                      className="text-[10px] bg-white/10 hover:bg-white/20 text-white rounded px-2 py-0.5 uppercase tracking-widest transition-colors font-bold flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> Add Image
+                    </button>
+                  )}
+                </div>
+                {extraImages.length > 0 && (
+                  <div className="space-y-3">
+                    {extraImages.map((url, idx) => (
+                      <div key={idx} className="relative group rounded-2xl overflow-hidden">
+                        <img src={url} alt={`Gallery ${idx + 1}`} className="w-full object-cover rounded-2xl max-h-64" />
+                        {isEditable && (
+                          <button
+                            onClick={() => {
+                              const newSocials = (card.card_social_links || []).filter(
+                                (s: any) => !(s.platform === '_extra_image' && s.url === url)
+                              )
+                              handleTextChange('card_social_links', newSocials as any)
+                            }}
+                            className="absolute top-2 right-2 bg-black/60 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {extraImages.length === 0 && isEditable && (
+                  <div className="text-center py-6 border border-dashed border-white/10 rounded-2xl">
+                    <p className="text-xs text-white/30">No gallery images added yet</p>
+                  </div>
+                )}
+              </motion.div>
+            )
+          })()}
 
           {!isEditable && (
             <motion.div variants={itemVariants} className="text-center pt-8 pb-10">
@@ -667,6 +708,30 @@ export default function CardClient({ card: initialCard, isEditable = false, edit
                  Done
                </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isEditable && showImageGalleryUploader && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative">
+            <button onClick={() => setShowImageGalleryUploader(false)} className="absolute top-4 right-4 text-zinc-400 hover:text-black transition-colors">
+              <Check className="w-5 h-5" />
+            </button>
+            <h2 className="text-black font-bold mb-1 text-lg">Add Gallery Image</h2>
+            <p className="text-zinc-400 text-sm mb-4">Upload a photo or banner to display at the bottom of your card.</p>
+            <ImageUploader
+              name="gallery_image"
+              label=""
+              defaultValue=""
+              aspectRatio="video"
+              onUploadSuccess={(url) => {
+                const currentSocials = card.card_social_links || []
+                const updated = [...currentSocials, { platform: '_extra_image', url }]
+                handleTextChange('card_social_links', updated as any)
+                setShowImageGalleryUploader(false)
+              }}
+            />
           </div>
         </div>
       )}
